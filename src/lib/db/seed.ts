@@ -1,6 +1,9 @@
-// Production seed — management users, client profiles, team members
+// Production seed — client profiles, team members
 // NEVER put test data here — see SO §11 Rule 12
-// Uses DATABASE_ADMIN_URL for privilege to update user roles
+//
+// NOTE: User role updates (admin→co-ceo, employee→co-ceo, org_id→NULL)
+// are NOT done here. Roles will be updated once confirmed with Brandon.
+// When ready, uncomment the role update section below.
 
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
@@ -17,27 +20,12 @@ async function run() {
   const pool = new Pool({ connectionString: DATABASE_URL });
 
   try {
-    // --- Update management user roles (from client portal roles to management roles) ---
-    // Brandon Devier: admin → co-ceo, org_id → NULL (cross-org)
-    await pool.query(
-      "UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1",
-      ["b0000000-0000-0000-0000-000000000001"]
-    );
-    console.log("[seed] Brandon Devier → co-ceo");
-
-    // Zack Devier: employee → co-ceo, org_id → NULL (cross-org)
-    await pool.query(
-      "UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1",
-      ["b0000000-0000-0000-0000-000000000003"]
-    );
-    console.log("[seed] Zack Devier → co-ceo");
-
-    // Cameron Cannon: director stays director, org_id → NULL (cross-org)
-    await pool.query(
-      "UPDATE users SET organization_id = NULL WHERE id = $1",
-      ["b0000000-0000-0000-0000-000000000002"]
-    );
-    console.log("[seed] Cameron Cannon → director (cross-org)");
+    // --- User role updates — UNCOMMENT when roles are confirmed with Brandon ---
+    // TODO: Confirm with Brandon which users get co-ceo/director/employee roles
+    // await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000001"]); // Brandon Devier
+    // await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000003"]); // Zack Devier
+    // await pool.query("UPDATE users SET organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000002"]); // Cameron Cannon
+    // console.log("[seed] user roles updated");
 
     // --- Client profiles for real client orgs ---
     const profiles = [
