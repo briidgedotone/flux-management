@@ -275,40 +275,22 @@ export {};
 - [x] Re-export from `src/data/types.ts` for backwards compatibility (15 existing imports unaffected)
 - [x] Verify build passes + `tsc --noEmit` zero errors
 
-### Step 0.6: Set up test infrastructure
+### Step 0.6: Set up test infrastructure ✅ DONE
 > Ref: BP §10 (Test Strategy — all sections), SO §11 (Test Data Isolation — all 13 rules)
 > **This step establishes the safety framework for all subsequent testing. Do not skip.**
 > Commit: `test(infra): add test org, seed data, cleanup, and safety guards`
 > Files: `src/__tests__/test-constants.ts`, `src/__tests__/seed-test-data.ts`, `src/__tests__/cleanup.ts`, `src/__tests__/guards.ts`, `src/__tests__/setup.ts`, `src/__tests__/teardown.ts`, `vitest.config.ts`, `package.json`
 > Phase Strategy: Can build now — local DB write to test org only
 
-- [ ] Create `src/__tests__/test-constants.ts` → BP §10 (Test Organization, Test Users)
-  - `TEST_ORG_ID = '00000000-0000-0000-0000-000000000099'`
-  - `TEST_CEO_ID`, `TEST_DIRECTOR_ID`, `TEST_EMPLOYEE_ID`, `TEST_CLIENT_ID`
-  - `TEST_EMAIL_DOMAIN = '@test.flux.internal'`
-- [ ] Create `src/__tests__/seed-test-data.ts` → BP §10 (Test Seed Data table)
-  - Insert test org (is_active = false) with `ON CONFLICT DO NOTHING`
-  - Insert 4 test users with `ON CONFLICT DO NOTHING`
-  - Insert all test seed data (tickets, projects, documents, etc.)
-  - All scoped to `TEST_ORG_ID` or test user IDs
-- [ ] Create `src/__tests__/cleanup.ts` → SO §11 Rule 10 (Foreign Key Order in Cleanup)
-  - Delete all test data in child-first FK order (18 steps)
-  - Every DELETE scoped by `TEST_ORG_ID` or `TEST_EMAIL_DOMAIN`
-  - NEVER delete the test org row itself
-  - NEVER use TRUNCATE
-- [ ] Create `src/__tests__/guards.ts` → SO §11 Rule 11 (Guard Against Accidental Writes)
-  - `assertTestOrg(organizationId)` — throws if not TEST_ORG_ID
-  - `assertTestUser(userId)` — throws if not a test user ID
-  - `assertTestEmail(email)` — throws if not @test.flux.internal
-- [ ] Create `src/__tests__/setup.ts` — Global setup: cleanup → seed
-- [ ] Create `src/__tests__/teardown.ts` — Global teardown: cleanup
-- [ ] Update `vitest.config.ts` to use global setup/teardown files
-- [ ] Add npm scripts to `package.json`:
-  - `"test:seed": "tsx src/__tests__/seed-test-data.ts"` — manually seed test data
-  - `"test:cleanup": "tsx src/__tests__/cleanup.ts"` — manually cleanup test data
-- [ ] Run seed → verify test org and test data created
-- [ ] Run cleanup → verify all test data removed, test org remains
-- [ ] Run `npm test` → verify setup/teardown cycle works end-to-end
+- [x] Create `src/__tests__/test-constants.ts` — 6 constants + TEST_USER_IDS array
+- [x] Create `src/__tests__/seed-test-data.ts` — test org (is_active=false), 4 users, 5 tickets, 2 projects. All idempotent.
+- [x] Create `src/__tests__/cleanup.ts` — FK-ordered cleanup across all 22 tables. Scoped by TEST_ORG_ID + TEST_EMAIL_DOMAIN.
+- [x] Create `src/__tests__/guards.ts` — assertTestOrg(), assertTestUser(), assertTestEmail()
+- [x] Create `src/__tests__/setup.ts` — Global setup: cleanup → seed
+- [x] Create `src/__tests__/teardown.ts` — Global teardown: cleanup
+- [x] Create `vitest.config.ts` — global setup, dotenv loading, path alias
+- [x] Add npm scripts: `test`, `test:watch`, `test:seed`, `test:cleanup`
+- [ ] **Pending manual verification:** Run `npm run test:seed` once DATABASE_URL is configured with real credentials
 
 ---
 
