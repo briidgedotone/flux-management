@@ -186,39 +186,39 @@ Before committing (commit after EVERY step):
 
 ## Phase 0 — Pre-Implementation Setup
 
-### Step 0.1: Create implementation branch
+### Step 0.1: Create implementation branch ✅ DONE
 > Ref: BP §1 (Architecture Overview)
 > Commit: _(no commit — branch creation only)_
 > Phase Strategy: Can build now — local git operation
 
-- [ ] Create `feat/backend-implementation` branch from `main`
-- [ ] Push branch to remote
+- [x] Create `feat/backend-implementation` branch from `main`
+- [x] Push branch to remote
 
-### Step 0.2: Install backend dependencies
+### Step 0.2: Install backend dependencies ✅ DONE
 > Ref: BP §2 (Azure Infrastructure — Environment Variables)
 > Commit: `chore(deps): add backend dependencies for Azure, PostgreSQL, Graph API, and Claude`
 > Files: `package.json`, `package-lock.json`
 > Phase Strategy: Can build now — npm install, no external APIs
 
-- [ ] Install production dependencies:
+- [x] Install production dependencies:
   ```bash
   npm install pg jose @anthropic-ai/sdk @microsoft/microsoft-graph-client @azure/identity @azure/keyvault-secrets
   ```
-- [ ] Install dev dependencies:
+- [x] Install dev dependencies:
   ```bash
   npm install -D @types/pg vitest dotenv
   ```
-- [ ] Note: `vitest` is needed for test runner, `dotenv` for loading env vars in scripts
-- [ ] Verify `zod` is already installed (check `package.json`)
-- [ ] `pg` — PostgreSQL client
-- [ ] `@types/pg` — TypeScript types for pg
-- [ ] `jose` — JWT creation/verification → BP §3 (Auth — JWT Payload)
-- [ ] `@anthropic-ai/sdk` — Claude API client → BP §7 (AI Assistant), EA §Claude API
-- [ ] `@microsoft/microsoft-graph-client` — Graph API client → BP §6 (Integration Details)
-- [ ] `@azure/identity` — Azure authentication → BP §3 (Auth — Azure AD Setup)
-- [ ] `@azure/keyvault-secrets` — Secret management → SO §8 (Secrets Management)
-- [ ] Run `npm audit` — if critical/high vulnerabilities found, resolve before proceeding
-- [ ] Verify build still passes: `npm run build`
+- [x] Note: `vitest` is needed for test runner, `dotenv` for loading env vars in scripts
+- [x] Verify `zod` is already installed (check `package.json`)
+- [x] `pg` — PostgreSQL client
+- [x] `@types/pg` — TypeScript types for pg
+- [x] `jose` — JWT creation/verification → BP §3 (Auth — JWT Payload)
+- [x] `@anthropic-ai/sdk` — Claude API client → BP §7 (AI Assistant), EA §Claude API
+- [x] `@microsoft/microsoft-graph-client` — Graph API client → BP §6 (Integration Details)
+- [x] `@azure/identity` — Azure authentication → BP §3 (Auth — Azure AD Setup)
+- [x] `@azure/keyvault-secrets` — Secret management → SO §8 (Secrets Management)
+- [x] Run `npm audit` — 8 vulnerabilities found, all fixed with `npm audit fix`, 0 remaining
+- [x] Verify build still passes: `npm run build`
 
 ### Step 0.3: Create `.env.local` template
 > Ref: BP §2 (Azure Infrastructure — Environment Variables), SO §8 (Secrets Management)
