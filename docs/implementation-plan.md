@@ -220,23 +220,23 @@ Before committing (commit after EVERY step):
 - [x] Run `npm audit` — 8 vulnerabilities found, all fixed with `npm audit fix`, 0 remaining
 - [x] Verify build still passes: `npm run build`
 
-### Step 0.3: Create `.env.local` template
+### Step 0.3: Create `.env.local` template ✅ DONE
 > Ref: BP §2 (Azure Infrastructure — Environment Variables), SO §8 (Secrets Management)
 > Commit: `chore(infra): add environment variable template and .env.example`
 > Files: `.env.example`
 > DO NOT commit `.env.local`
 > Phase Strategy: Can build now — local config only
 
-- [ ] Create `.env.example` with all required variables (see BP §2) — **empty values only, no real secrets**
+- [x] Create `.env.example` with all required variables (see BP §2) — **empty values only, no real secrets**
   - Document which values are **shared** with client portal: `DATABASE_URL`, `ATERA_API_KEY`, `ANTHROPIC_API_KEY`, `AZURE_AD_TENANT_ID`, `AZURE_KEY_VAULT_URL`
   - Document which values are **management-specific**: `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_REDIRECT_URI`, `JWT_SECRET`, `CONTACT_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`
-- [ ] Create `.env.local` with development values (gitignored)
-- [ ] Update `package.json` dev script to use port 3001 (avoids conflict with client portal on 3000):
+- [x] Create `.env.local` with development values (gitignored)
+- [x] Update `package.json` dev script to use port 3001 (avoids conflict with client portal on 3000):
   ```json
   "dev": "next dev -p 3001"
   ```
-- [ ] Verify `.env.local` is in `.gitignore` → SO §8 rule: `.env.local` is gitignored, never committed
-- [ ] Verify `.env.example` has no real secrets: `grep -v "^#\|^$\|=$" .env.example` should return nothing
+- [x] Verify `.env.local` is in `.gitignore` → SO §8 rule: `.env.local` is gitignored, never committed
+- [x] Verify `.env.example` has no real secrets — only placeholder/default values
 
 ### Step 0.4: Scaffold backend folder structure
 > Ref: BP §12 (Folder Structure)
