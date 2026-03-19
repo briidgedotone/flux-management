@@ -238,7 +238,7 @@ Before committing (commit after EVERY step):
 - [x] Verify `.env.local` is in `.gitignore` → SO §8 rule: `.env.local` is gitignored, never committed
 - [x] Verify `.env.example` has no real secrets — only placeholder/default values
 
-### Step 0.4: Scaffold backend folder structure
+### Step 0.4: Scaffold backend folder structure ✅ DONE
 > Ref: BP §12 (Folder Structure)
 > Commit: `chore(infra): scaffold backend folder structure with placeholder files`
 > Files: all new directories and placeholder `.ts` files
@@ -250,30 +250,30 @@ Before committing (commit after EVERY step):
 export {};
 ```
 
-- [ ] Create `src/lib/db/client.ts` (placeholder)
-- [ ] Create `src/lib/db/migrations/` directory
-- [ ] Create `src/lib/db/queries/` with placeholders: `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`, `reports.ts`, `ai.ts`, `notifications.ts`, `contact-submissions.ts`, `activity-log.ts`, `report-snapshots.ts`
-- [ ] Create `src/lib/auth/` with placeholders: `azure-ad.ts`, `session.ts`, `middleware.ts`
-- [ ] Create `src/lib/integrations/graph/planner-write.ts` (placeholder)
-- [ ] Create `src/lib/integrations/claude/` with placeholders: `client.ts`, `context-builder.ts`, `system-prompt.ts`
-- [ ] Create `src/lib/integrations/mail/sender.ts` (placeholder)
-- [ ] Create `src/lib/api/` with placeholders: `client.ts`, `response.ts`, `rate-limit.ts`, `query-client.ts`
-- [ ] Create `src/lib/validators/` with placeholders: `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`, `reports.ts`, `ai.ts`, `notifications.ts`, `contact-submissions.ts`, `settings.ts`
-- [ ] Create `src/hooks/` directory (if not exists)
-- [ ] Create `src/__tests__/` directory with subdirectories: `phase-1/`, `phase-2/`, `phase-3/`, `phase-4/`, `phase-5/`, `phase-7/`, `integration/`
-- [ ] Verify build passes: `npm run build`
+- [x] Create `src/lib/db/client.ts` (placeholder)
+- [x] Create `src/lib/db/migrations/` directory
+- [x] Create `src/lib/db/queries/` with placeholders: `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`, `reports.ts`, `ai.ts`, `notifications.ts`, `contact-submissions.ts`, `activity-log.ts`, `report-snapshots.ts`
+- [x] Create `src/lib/auth/` with placeholders: `azure-ad.ts`, `session.ts`, `middleware.ts`
+- [x] Create `src/lib/integrations/graph/planner-write.ts` (placeholder)
+- [x] Create `src/lib/integrations/claude/` with placeholders: `client.ts`, `context-builder.ts`, `system-prompt.ts`
+- [x] Create `src/lib/integrations/mail/sender.ts` (placeholder)
+- [x] Create `src/lib/api/` with placeholders: `client.ts`, `response.ts`, `rate-limit.ts`, `query-client.ts`
+- [x] Create `src/lib/validators/` with placeholders: `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`, `reports.ts`, `ai.ts`, `notifications.ts`, `contact-submissions.ts`, `settings.ts`
+- [x] Create `src/hooks/` directory (already exists)
+- [x] Create `src/__tests__/` directory with subdirectories: `phase-1/`, `phase-2/`, `phase-3/`, `phase-4/`, `phase-5/`, `phase-7/`, `integration/`
+- [x] Verify build passes: `npm run build`
 
-### Step 0.5: Consolidate and extend types
+### Step 0.5: Consolidate and extend types ✅ DONE
 > Ref: BP §4 (Database Schema — New Tables), BP §5 (API Routes — Response Format)
 > Commit: `refactor(types): consolidate types into src/types and add management-specific types`
 > Files: `src/types/index.ts`, `src/data/types.ts`
 > Phase Strategy: Can build now — TypeScript refactor only
 
-- [ ] Move types from `src/data/types.ts` to `src/types/index.ts`
-- [ ] Add backend types: `AuthUser`, `RequestContext`, `ApiResponse`, `PaginatedResponse` → BP §5 (API Response Format)
-- [ ] Add management-specific types: `ManagementUser`, `ClientProfile`, `TeamMemberProfile`, `InternalNote`, `ActivityLogEntry`, `ReportSnapshot`, `ContactFormSubmission` → BP §4 (each table maps to a type)
-- [ ] Re-export from `src/data/types.ts` for backwards compatibility
-- [ ] Verify build passes
+- [x] Move types from `src/data/types.ts` to `src/types/index.ts`
+- [x] Add backend types: `AuthUser`, `RequestContext`, `ApiResponse`, `PaginatedResponse` → BP §5 (API Response Format)
+- [x] Add management-specific types: `ClientProfile`, `TeamMemberProfile`, `ContactFormSubmission`, `ReportSnapshot`, `ConnectorName`, `ConnectorStatusValue`, `SyncResult` → BP §4
+- [x] Re-export from `src/data/types.ts` for backwards compatibility (15 existing imports unaffected)
+- [x] Verify build passes + `tsc --noEmit` zero errors
 
 ### Step 0.6: Set up test infrastructure
 > Ref: BP §10 (Test Strategy — all sections), SO §11 (Test Data Isolation — all 13 rules)

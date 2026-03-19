@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:seed": "npx tsx src/__tests__/seed-test-data.ts",
+    "test:cleanup": "npx tsx src/__tests__/cleanup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
