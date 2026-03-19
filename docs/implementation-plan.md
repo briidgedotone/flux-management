@@ -296,17 +296,17 @@ export {};
 
 ## Phase 1 — Database Foundation
 
-### Step 1.1: PostgreSQL connection client
+### Step 1.1: PostgreSQL connection client ✅ DONE
 > Ref: BP §1 (Architecture — Core Principles: "Cross-org access"), BP §4 (Database Schema — Database Connection), SO §2 (Data Access Model)
 > Commit: `feat(db): add PostgreSQL connection pool without org scoping`
 > Files: `src/lib/db/client.ts`
 > Phase Strategy: Can build now — uses existing local PostgreSQL
 
-- [ ] Create `src/lib/db/client.ts`
-- [ ] Configure connection pool using `DATABASE_URL` env var → BP §2 (Environment Variables)
-- [ ] **No `withOrgScope()` wrapper** — management portal queries are cross-org → SO §2 (Data Access Model — Key Difference)
-- [ ] Add connection error handling and pool cleanup
-- [ ] Test connection to shared database
+- [x] Create `src/lib/db/client.ts` — Pool (max 20, 10s timeout, 30s idle, SSL in prod)
+- [x] Configure connection pool using `DATABASE_URL` env var
+- [x] **No `withOrgScope()` wrapper** — management portal queries are cross-org
+- [x] Add connection error handling (`pool.on("error")`)
+- [x] Test connection — verified: `SELECT 1` works, 4 organizations visible (3 real + 1 test)
 
 ### Step 1.2: Write migration `005_management_tables.sql`
 > Ref: BP §4 (Database Schema — New Tables, full SQL for all 7 tables)
