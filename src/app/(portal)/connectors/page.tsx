@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   PlugIcon,
   CheckCircleIcon,
@@ -15,7 +15,7 @@ import {
   PlusIcon,
 } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/page-header";
-import { mockConnectors } from "@/data/mock-connectors";
+import { useConnectors } from "@/hooks/use-connectors";
 import type { Connector } from "@/data/types";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,14 @@ const connectorIcons: Record<Connector["icon"], typeof PlugIcon> = {
 };
 
 export default function ConnectorsPage() {
-  const [connectors, setConnectors] = useState(mockConnectors);
+  const { data: rawData, isLoading, error } = useConnectors();
+  const apiConnectors = (rawData as any)?.data as Connector[] ?? [];
+  const [connectors, setConnectors] = useState<Connector[]>([]);
+
+  // Sync API data into local state when it arrives
+  useEffect(() => {
+    if (apiConnectors.length > 0) setConnectors(apiConnectors);
+  }, [apiConnectors.length]);
 
   const handleReconnect = (id: string) => {
     setConnectors((prev) =>
@@ -54,6 +61,12 @@ export default function ConnectorsPage() {
         }
       />
 
+      {isLoading && (
+        <div className="text-center py-12 text-sm text-text-muted">Loading connectors...</div>
+      )}
+      {error && (
+        <div className="text-center py-12 text-sm text-error">Failed to load connectors.</div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
         {connectors.map((connector) => (
           <ConnectorCard
