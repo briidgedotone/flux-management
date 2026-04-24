@@ -619,15 +619,15 @@ export {};
 - [x] `GET /api/dashboard` — Combined KPIs: revenue, tickets (open/pending/closed/critical), projects (on-track/at-risk/delayed), client health, team utilization. All queries run in parallel. `is_active=true` enforced via query modules (R11).
 - [x] Wrapped with `withManagementAuth` (R23).
 
-### Step 4.3: Client endpoints
+### Step 4.3: Client endpoints ✅ DONE
 > Ref: BP §5 (API Routes — Clients), SO §4 (Sensitive Endpoints: PUT clients is co-ceo/director only)
 > Commit: `feat(api): add client list, detail, update, and stats endpoints`
 > Files: `src/app/api/clients/route.ts`, `src/app/api/clients/[id]/route.ts`, `src/app/api/clients/[id]/stats/route.ts`
 
-- [ ] `GET /api/clients` — List with filters → BP §5 (Clients — Filters, Joins)
-- [ ] `GET /api/clients/:id` — Detail → BP §5 (Clients — Returns)
-- [ ] `PUT /api/clients/:id` — Update → BP §5 (co-ceo, director only), SO §4 (Sensitive Endpoints), SO §5 (audit log)
-- [ ] `GET /api/clients/:id/stats` — Client KPIs → BP §5 (Clients — Filters: range)
+- [x] `GET /api/clients` — List with filters, pagination, Zod validation. `withManagementAuth`.
+- [x] `GET /api/clients/:id` — Detail. `withManagementAuth`.
+- [x] `PUT /api/clients/:id` — Update. `withRole(['co-ceo', 'director'])`. Audit log (R29).
+- [x] `GET /api/clients/:id/stats` — Client KPIs with range. `withManagementAuth`.
 
 ### Step 4.4: Ticket endpoints
 > Ref: BP §5 (API Routes — Tickets), SO §9 (parameterized SQL for filters)
