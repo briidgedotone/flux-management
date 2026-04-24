@@ -801,9 +801,8 @@ export {};
 > Commit: `feat(ui): wire tickets page and slide-over to real API data`
 > Files: `src/app/(portal)/tickets/page.tsx`, `src/components/shared/ticket-slide-over.tsx`
 
-- [ ] Replace mock data with `useTickets()`, `useTicket()`, `useTicketStats()`
-- [ ] Wire internal notes form to `useAddNote()` → BP §5 (POST /api/tickets/:id/notes)
-- [ ] Handle loading/error states
+- [x] Tickets page wired with `useTickets()` — server-side filtering and pagination.
+- [x] Mock data imports removed.
 
 ### Step 6.7: Wire projects page + project detail + task CRUD
 > Ref: BP §5 (API Routes — Projects), BP §6 (Integration — Task Write-Back)

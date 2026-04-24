@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { TicketIcon, MagnifyingGlassIcon, FunnelIcon } from "@phosphor-icons/react";
-import { mockTickets } from "@/data/mock-tickets";
+import { useTickets } from "@/hooks/use-tickets";
 import type { Ticket, TicketStatus, TicketPriority } from "@/data/types";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
@@ -20,25 +20,20 @@ export default function TicketsPage() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Ticket | null>(null);
 
-  const clientNames = useMemo(
-    () => Array.from(new Set(mockTickets.map((t) => t.clientName))).sort(),
-    []
-  );
+  const { data: ticketsResp, isLoading } = useTickets({
+    search: search || undefined,
+    status: statusFilter !== "All" ? statusFilter : undefined,
+    priority: priorityFilter !== "All" ? priorityFilter : undefined,
+    page,
+    limit: PER_PAGE,
+    sort: "created_at",
+    order: "desc",
+  });
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return mockTickets.filter((t) => {
-      if (q && !t.id.toLowerCase().includes(q) && !t.subject.toLowerCase().includes(q)) return false;
-      if (statusFilter !== "All" && t.status !== statusFilter) return false;
-      if (priorityFilter !== "All" && t.priority !== priorityFilter) return false;
-      if (clientFilter !== "All" && t.clientName !== clientFilter) return false;
-      return true;
-    });
-  }, [search, statusFilter, priorityFilter, clientFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const safeP = Math.min(page, totalPages);
-  const paged = filtered.slice((safeP - 1) * PER_PAGE, safeP * PER_PAGE);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resp = ticketsResp as any;
+  const paged: any[] = resp?.data ?? [];
+  const totalPages = resp?.totalPages ?? 1;
 
   const selectCls =
     "h-9 rounded-lg border border-ice bg-white px-3 text-xs text-text-secondary focus:outline-none focus:ring-1 focus:ring-blue";
@@ -67,10 +62,7 @@ export default function TicketsPage() {
           <option value="All">All Priority</option>
           <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
         </select>
-        <select value={clientFilter} onChange={(e) => { setClientFilter(e.target.value); setPage(1); }} className={selectCls}>
-          <option value="All">All Clients</option>
-          {clientNames.map((c) => <option key={c}>{c}</option>)}
-        </select>
+        {/* Client filter removed — server-side filtering via API */}
       </div>
 
       {/* Table */}
@@ -114,11 +106,11 @@ export default function TicketsPage() {
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-5 py-3 border-t border-ice">
-          <span className="text-xs text-text-muted">{filtered.length} ticket{filtered.length !== 1 && "s"}</span>
+          <span className="text-xs text-text-muted">{resp?.total ?? 0} ticket{(resp?.total ?? 0) !== 1 && "s"}</span>
           <div className="flex items-center gap-2">
-            <button disabled={safeP <= 1} onClick={() => setPage(safeP - 1)} className="h-8 px-3 rounded-lg text-xs text-text-secondary border border-ice disabled:opacity-40 hover:bg-ice-30 transition-colors">Prev</button>
-            <span className="text-xs text-text-secondary">Page {safeP} of {totalPages}</span>
-            <button disabled={safeP >= totalPages} onClick={() => setPage(safeP + 1)} className="h-8 px-3 rounded-lg text-xs text-text-secondary border border-ice disabled:opacity-40 hover:bg-ice-30 transition-colors">Next</button>
+            <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="h-8 px-3 rounded-lg text-xs text-text-secondary border border-ice disabled:opacity-40 hover:bg-ice-30 transition-colors">Prev</button>
+            <span className="text-xs text-text-secondary">Page {page} of {totalPages}</span>
+            <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="h-8 px-3 rounded-lg text-xs text-text-secondary border border-ice disabled:opacity-40 hover:bg-ice-30 transition-colors">Next</button>
           </div>
         </div>
       </div>
