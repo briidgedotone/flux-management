@@ -551,14 +551,15 @@ export {};
 - [x] `createNotification(userId, data)` — Insert with type, title, description, link.
 - [x] Tests: 6 tests in `src/__tests__/phase-3/notifications.test.ts` — all pass.
 
-### Step 3.8: `contact-submissions.ts`
+### Step 3.8: `contact-submissions.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Contact Submissions), BP §4 (Schema — `contact_form_submissions` table), BP §6 (Integration — Contact Form Webhook)
 > Commit: `feat(db): add contact form submission query module`
 > Files: `src/lib/db/queries/contact-submissions.ts`
 
-- [ ] `listSubmissions(filters)` — With status filter → BP §5 (GET /api/contact-submissions)
-- [ ] `updateSubmissionStatus(id, status, reviewedBy)` — Mark as reviewed/responded → SO §5 (audit log)
-- [ ] `createSubmission(data)` — Insert from webhook → EA §Contact Form Webhook (validation rules)
+- [x] `listSubmissions(filters)` — Paginated, supports status filter.
+- [x] `updateSubmissionStatus(id, status, reviewedBy)` — Updates status and reviewer.
+- [x] `createSubmission(data)` — Stores raw webhook data without modification.
+- [x] Tests: 5 tests in `src/__tests__/phase-3/contact-submissions.test.ts` — all pass.
 
 ### Step 3.9: `activity-log.ts`
 > Ref: BP §4 (Schema — `activity_log` table), SO §5 (Audit Logging — What Gets Logged, What Does NOT Get Logged, Retention)
