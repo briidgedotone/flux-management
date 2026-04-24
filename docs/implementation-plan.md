@@ -423,16 +423,18 @@ export {};
 - [x] Reject users with `client` role → SO §3 (Role Verification: "If user role is client, access is denied")
 - [x] Also implemented prerequisites: `src/lib/api/response.ts`, `src/lib/api/rate-limit.ts`, `src/lib/db/queries/users.ts`
 
-### Step 2.4: Auth API routes
+### Step 2.4: Auth API routes ✅ DONE
 > Ref: BP §5 (API Routes — Auth Routes), BP §3 (Auth Flow steps 1-8)
-> Commit: `feat(auth): add login, callback, logout, and me API routes`
-> Files: `src/app/api/auth/login/route.ts`, `src/app/api/auth/callback/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`
+> Commit: `feat(auth): add login, callback, logout, me, and dev-login API routes`
+> Files: `src/app/api/auth/login/route.ts`, `src/app/api/auth/callback/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`, `src/app/api/auth/dev-login/route.ts`
 
-- [ ] `POST /api/auth/login` — Initiate Azure AD OAuth2 flow → BP §3 (Auth Flow steps 1-2)
-- [ ] `GET /api/auth/callback` — Exchange code, validate tokens, create session → BP §3 (Auth Flow steps 3-8)
-- [ ] `GET /api/auth/logout` — Clear session cookie
-- [ ] `GET /api/auth/me` — Return current user info
-- [ ] `GET /api/auth/dev-login` — Dev-only bypass (NODE_ENV=development)
+- [x] `GET /api/auth/login` — Initiate Azure AD OAuth2 flow → BP §3 (Auth Flow steps 1-2)
+- [x] `GET /api/auth/callback` — Exchange code, validate tokens, create session → BP §3 (Auth Flow steps 3-8)
+- [x] `GET /api/auth/logout` — Revoke JTI, clear session cookie
+- [x] `GET /api/auth/me` — Return current user info (no organizationId)
+- [x] `GET /api/auth/dev-login` — Dev-only bypass (ENABLE_TEST_LOGIN=true), rejects client role
+- [x] Callback rejects `client` role users at login time [R25]
+- [x] All routes use port 3001 default URL
 
 ### Step 2.5: Security headers middleware
 > Ref: SO §1 (Security Inheritance — Security headers list), BP §9 (Security — Inherited from Client Portal)
