@@ -611,13 +611,13 @@ export {};
   - `contact-submissions.ts` — list, id, update, webhookSubmission schemas
   - `settings.ts` — profileUpdate schema
 
-### Step 4.2: Dashboard endpoint
+### Step 4.2: Dashboard endpoint ✅ DONE
 > Ref: BP §5 (API Routes — Dashboard)
 > Commit: `feat(api): add dashboard endpoint with combined KPIs`
 > Files: `src/app/api/dashboard/route.ts`
 
-- [ ] `GET /api/dashboard` — Combined KPIs from all domains → BP §5 (Dashboard — Response includes: revenue, tickets, SLA, projects, health, utilization). **All aggregations must filter `is_active = true`** → BP §10, SO §11 Rule 7
-- [ ] Wrap with `withManagementAuth` → SO §4 (Enforcement Pattern)
+- [x] `GET /api/dashboard` — Combined KPIs: revenue, tickets (open/pending/closed/critical), projects (on-track/at-risk/delayed), client health, team utilization. All queries run in parallel. `is_active=true` enforced via query modules (R11).
+- [x] Wrapped with `withManagementAuth` (R23).
 
 ### Step 4.3: Client endpoints
 > Ref: BP §5 (API Routes — Clients), SO §4 (Sensitive Endpoints: PUT clients is co-ceo/director only)
