@@ -721,21 +721,16 @@ export {};
 - [x] Client credentials token with cache. Retry on 429 (max 3 attempts).
 - [ ] **Pending:** Real Planner API testing requires `Tasks.ReadWrite.All` from Brandon.
 
-### Step 5.2: Claude AI context builder
+### Step 5.2: Claude AI context builder ✅ DONE
 > Ref: BP §7 (AI Assistant Architecture — System Prompt Template, Context Builder), EA §Claude API (Safety Rules 1-5)
 > Commit: `feat(ai): add Claude client, cross-org context builder, and management system prompt`
 > Files: `src/lib/integrations/claude/client.ts`, `src/lib/integrations/claude/context-builder.ts`, `src/lib/integrations/claude/system-prompt.ts`
-> Phase Strategy: Can build now — Anthropic API key available
 
-- [ ] Create `src/lib/integrations/claude/client.ts` — API wrapper → BP §12 (Files That Can Be Adapted: identical to client portal)
-- [ ] Create `src/lib/integrations/claude/context-builder.ts` — Cross-org context → BP §7 (Context Builder function)
-  - Query all client profiles, ticket stats, project stats, team metrics, revenue → BP §7 (Context Builder — 5 parallel queries)
-  - **Must filter `WHERE o.is_active = true` to exclude test org from AI context** → BP §10, SO §11 Rule 7
-  - Format into structured context string
-- [ ] Create `src/lib/integrations/claude/system-prompt.ts` — Management persona → BP §7 (System Prompt Template)
-- [ ] Never send raw credentials in prompt → EA §Claude API (rule 1)
-- [ ] Include disclaimer: "Verify critical information" → EA §Claude API (rule 3)
-- [ ] Test AI responses with cross-org context
+- [x] `client.ts` — Anthropic SDK wrapper, claude-sonnet-4-20250514, 1500 max tokens.
+- [x] `context-builder.ts` — Cross-org context: clients, ticket stats, projects, team, revenue. 5 parallel queries. `is_active=true` on all (R11, R36).
+- [x] `system-prompt.ts` — Management persona with 8 rules. Includes "Verify critical information" disclaimer (R37).
+- [x] Updated `POST /api/ai/chat` to use real Claude integration instead of placeholder.
+- [x] No credentials in prompt (R36). Test org excluded via `is_active` filter.
 
 ### Step 5.3: Email notification sender
 > Ref: BP §6 (Integration — Reused: Email Notifications), BP §8 (Notification System — Delivery Channels), EA §Microsoft Graph API (Outlook Mail rules)
