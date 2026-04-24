@@ -652,14 +652,14 @@ export {};
 - [x] `PUT /api/projects/:id/tasks/:taskId` — Update task. Employee: own tasks only. Audit log (R29).
 - [x] `DELETE /api/projects/:id/tasks/:taskId` — Delete task. Employee: own only, co-ceo/director: any. Audit log (R29).
 
-### Step 4.6: Team endpoints
+### Step 4.6: Team endpoints ✅ DONE
 > Ref: BP §5 (API Routes — Team), SO §4 (Sensitive Endpoints: PUT team is co-ceo/director only)
 > Commit: `feat(api): add team list, detail, and update endpoints`
 > Files: `src/app/api/team/route.ts`, `src/app/api/team/[id]/route.ts`
 
-- [ ] `GET /api/team` — List with computed metrics → BP §5 (Team — Returns)
-- [ ] `GET /api/team/:id` — Detail → BP §5 (Team — Returns)
-- [ ] `PUT /api/team/:id` — Update → BP §5 (co-ceo, director only), SO §4 (Sensitive Endpoints), SO §5 (audit log)
+- [x] `GET /api/team` — List with computed metrics. `withManagementAuth`.
+- [x] `GET /api/team/:id` — Detail. `withManagementAuth`.
+- [x] `PUT /api/team/:id` — Update. `withRole(['co-ceo', 'director'])`. Audit log (R29).
 
 ### Step 4.7: Report endpoints
 > Ref: BP §5 (API Routes — Reports), SO §4 (co-ceo/director only for all reports), SO §4 (Employee Restrictions: "cannot view reports")
