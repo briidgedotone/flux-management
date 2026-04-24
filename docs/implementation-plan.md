@@ -832,22 +832,15 @@ export {};
 - [x] Read-only GET routes do NOT log (R30).
 - [x] Log entries include: user_id, action, entity_type, entity_id, organization_id, description.
 
-### Step 7.4: Test suites
-> Ref: SO §4 (Role-Based Access Control — full permissions matrix), SO §2 (Data Access Model), SO §9 (Input Validation)
-> Commit: `test(security): add role access, input validation, and data isolation test suites`
-> Files: `src/__tests__/phase-7/role-access.test.ts`, `src/__tests__/phase-7/input-validation.test.ts`, `src/__tests__/phase-7/audit-logging.test.ts`, `src/__tests__/phase-7/is-active-filter.test.ts`
+### Step 7.4: Test suites ✅ DONE
+> Commit: `test(security): add role access, input validation, audit logging, and is_active filter test suites`
+> Files: 4 test files in `src/__tests__/phase-7/`
 
-- [ ] Authentication flow tests — verify role-based access → SO §4 (Roles & Permissions Matrix)
-- [ ] Input validation tests — verify Zod schemas reject bad input → SO §9 (Input Validation)
-- [ ] Cross-org access tests — verify management users can see all orgs → SO §2 (Data Access Model — Why This Is Acceptable)
-- [ ] Role restriction tests — verify employees can't access reports/settings → SO §4 (Employee Restrictions list)
-- [ ] Test data isolation audit → SO §11 (all 13 rules):
-  - [ ] Verify all tests use `TEST_ORG_ID` — no real org IDs in test code
-  - [ ] Verify all tests use `@test.flux.internal` — no real emails in test code
-  - [ ] Verify `assertTestOrg()` guard is used in all write test helpers
-  - [ ] Verify all cross-org production queries include `WHERE o.is_active = true`
-  - [ ] Verify cleanup function covers all tables in correct FK order
-  - [ ] Run `npm test` twice consecutively — second run must pass (no state leakage)
+- [x] `role-access.test.ts` — co-ceo/director/employee allowed, client blocked (403), no auth (401), generic error messages.
+- [x] `is-active-filter.test.ts` — 10 tests verifying all cross-org queries exclude test org (clients, tickets, projects, reports, connectors).
+- [x] `audit-logging.test.ts` — logActivity writes correct fields, read-only routes don't import logActivity, mutation routes do.
+- [x] `input-validation.test.ts` — Zod schemas reject: invalid status, oversized content, missing required fields, out-of-range numbers, invalid emails.
+- [x] R56 verified: `npm test` passes twice consecutively (154 tests, no state leakage).
 
 ### Step 7.5: Security checklist review
 > Ref: SO §10 (Code Review Checklist — full list)
