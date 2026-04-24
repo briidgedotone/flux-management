@@ -20,7 +20,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import { mockProjects } from "@/data/mock-projects";
+import { useProject } from "@/hooks/use-projects";
 import { StatusBadge } from "@/components/shared/status-badge";
 import type { Project, ProjectTask, ProjectSubscription, TaskStatus, TicketPriority } from "@/data/types";
 import { cn } from "@/lib/utils";
@@ -56,11 +56,20 @@ function parseDate(str: string): Date {
 export default function ProjectDetailPage() {
   const params = useParams();
   const projectId = params.id as string;
-  const project = mockProjects.find((p) => p.id === projectId);
+  const { data: rawData, isLoading, error } = useProject(projectId);
+  const project = (rawData as any)?.data as Project | undefined;
 
   const [activeTab, setActiveTab] = useState<Tab>("tasks");
 
-  if (!project) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <p className="text-sm text-text-muted">Loading project...</p>
+      </div>
+    );
+  }
+
+  if (error || !project) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="w-16 h-16 rounded-full bg-ice-30 flex items-center justify-center mb-4">
