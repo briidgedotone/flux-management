@@ -436,17 +436,17 @@ export {};
 - [x] Callback rejects `client` role users at login time [R25]
 - [x] All routes use port 3001 default URL
 
-### Step 2.5: Security headers middleware
+### Step 2.5: Security headers ✅ DONE
 > Ref: SO §1 (Security Inheritance — Security headers list), BP §9 (Security — Inherited from Client Portal)
-> Commit: `security(auth): add security headers and CSRF protection`
+> Commit: `security(auth): add security headers to next.config.ts`
 > Files: `next.config.ts`
 
-- [ ] Add security headers to `next.config.ts`:
-  - Strict-Transport-Security → SO §1
-  - X-Content-Type-Options → SO §1
-  - X-Frame-Options → SO §1
-  - Content-Security-Policy → SO §1
-  - Referrer-Policy → SO §1
+- [x] Add security headers to `next.config.ts`:
+  - Strict-Transport-Security (max-age=63072000, includeSubDomains, preload)
+  - X-Content-Type-Options (nosniff)
+  - X-Frame-Options (DENY)
+  - Content-Security-Policy (default-src 'self', connect-src includes login.microsoftonline.com, frame-ancestors 'none')
+  - Referrer-Policy (strict-origin-when-cross-origin)
 
 ### Step 2.6: Wire login page + route protection
 > Ref: BP §3 (Auth Flow), SO §3 (Role Verification)
