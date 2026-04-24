@@ -708,19 +708,18 @@ export {};
 
 ## Phase 5 — Integrations
 
-### Step 5.1: Planner write-back client
-> Ref: BP §6 (Integration Details — Task Write-Back to Planner), EA §Microsoft Graph API (Write Operations — Planner rules 1-6), EA §Error Handling (Planner Write-Back code example)
+### Step 5.1: Planner write-back client ✅ DONE
+> Ref: BP §6 (Integration Details — Task Write-Back to Planner), EA §Microsoft Graph API (Write Operations — Planner rules 1-6)
 > Commit: `feat(sync): add Planner task write-back client with background execution`
 > Files: `src/lib/integrations/graph/planner-write.ts`
-> Phase Strategy: **May be blocked** — needs `Tasks.ReadWrite.All` admin consent from Brandon. Build code + test with mocks. Wire to real API when permission arrives.
 
-- [ ] Create `src/lib/integrations/graph/planner-write.ts`
-- [ ] `createPlannerTask(planId, data)` — POST to Graph API → EA §Microsoft Graph API (POST /planner/tasks)
-- [ ] `updatePlannerTask(taskId, data)` — PATCH to Graph API → EA §Microsoft Graph API (PATCH /planner/tasks/{id})
-- [ ] `deletePlannerTask(taskId)` — DELETE from Graph API → EA §Microsoft Graph API (DELETE /planner/tasks/{id})
-- [ ] Background execution — non-blocking, log errors → EA §Error Handling ("External API failures should NEVER block user actions")
-- [ ] Never modify plans or buckets — only tasks → EA §Planner Write-Back (rule 5)
-- [ ] Test with real Planner API (requires `Tasks.ReadWrite.All` permission) → BP §3 (Azure AD — API Permissions)
+- [x] `createPlannerTask(planId, data)` — POST to Graph API with retry on 429.
+- [x] `updatePlannerTask(taskId, data, etag)` — PATCH with If-Match etag.
+- [x] `deletePlannerTask(taskId, etag)` — DELETE with If-Match. Ignores 404.
+- [x] `backgroundPlannerWrite(action, fn)` — Fire-and-forget wrapper. Logs errors, never throws (R33).
+- [x] Never modifies plans or buckets — only tasks (R34).
+- [x] Client credentials token with cache. Retry on 429 (max 3 attempts).
+- [ ] **Pending:** Real Planner API testing requires `Tasks.ReadWrite.All` from Brandon.
 
 ### Step 5.2: Claude AI context builder
 > Ref: BP §7 (AI Assistant Architecture — System Prompt Template, Context Builder), EA §Claude API (Safety Rules 1-5)
