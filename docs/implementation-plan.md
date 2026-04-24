@@ -804,18 +804,19 @@ export {};
 
 ## Phase 7 — Security Hardening
 
-### Step 7.1: Rate limiting
+### Step 7.1: Rate limiting ✅ DONE
 > Ref: SO §6 (Rate Limiting — table with all limits), BP §9 (Security — Rate Limits table)
 > Commit: `security(api): implement rate limiting for all API routes`
 > Files: `src/lib/api/rate-limit.ts`, all `route.ts` files
 > Phase Strategy: Can build now — pure code, no external APIs
 
-- [ ] Apply rate limits to all routes:
-  - Default: 100/min per user → SO §6
-  - Auth: 10/min per IP → SO §6
-  - AI Chat: 20/min per user → SO §6
-  - Reports: 30/min per user → SO §6
-  - Contact webhook: 10/min per API key → SO §6
+- [x] Rate limits already applied via middleware (implemented in Step 2.3):
+  - Default: 100/min per user (via `withManagementAuth` → `getRateLimitConfig`)
+  - Auth: 10/min per IP (login/callback routes)
+  - AI Chat: 20/min per user (path-based detection)
+  - Reports: 30/min per user (path-based detection)
+  - Contact webhook: 10/min per API key (via `withWebhookAuth`)
+- [x] Verified: all 30+ protected routes go through `withManagementAuth` or `withRole` (which calls it)
 
 ### Step 7.2: Error boundary and error pages
 > Ref: SO §9 (API Security — Error Responses: "generic messages only"), SO §1 (Security Inheritance — "never expose table names, stack traces")
