@@ -1,23 +1,25 @@
 // GET|POST /api/auth/logout — revoke session, clear cookie, redirect to login
-// Security: requires auth [SO §3]
+// NOTE: Does NOT use withManagementAuth — logout must always work,
+// even if the user's DB record is missing or role changed.
 
 import { NextRequest, NextResponse } from "next/server";
-import { withManagementAuth } from "@/lib/auth/middleware";
 import { destroySession, revokeSession, getSessionJti } from "@/lib/auth/session";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
 
 async function handleLogout(request: NextRequest) {
-  return withManagementAuth(request, async () => {
-    // Revoke the JTI so the token can't be reused
+  // Try to revoke the JTI (best effort — don't block logout if this fails)
+  try {
     const jti = await getSessionJti(request);
     if (jti) revokeSession(jti);
+  } catch {
+    // Ignore — cookie may be invalid/expired, that's fine
+  }
 
-    // Clear session cookie
-    await destroySession();
+  // Always clear session cookie
+  await destroySession();
 
-    return NextResponse.redirect(`${APP_URL}/login`);
-  });
+  return NextResponse.redirect(`${APP_URL}/login`);
 }
 
 export async function GET(request: NextRequest) {
