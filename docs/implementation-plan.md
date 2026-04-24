@@ -540,15 +540,16 @@ export {};
 - [x] `deleteConversation(conversationId)` — CASCADE deletes messages.
 - [x] Tests: 6 tests in `src/__tests__/phase-3/ai.test.ts` — all pass.
 
-### Step 3.7: `notifications.ts`
+### Step 3.7: `notifications.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Notifications), BP §8 (Notification System — Types, Delivery Channels), BP §4 (Schema — `management_notifications` table)
 > Commit: `feat(db): add management notification query module`
 > Files: `src/lib/db/queries/notifications.ts`
 
-- [ ] `listNotifications(userId, filters)` — From `management_notifications` → BP §8 (6 notification types)
-- [ ] `getUnreadCount(userId)` — Count of unread
-- [ ] `markAsRead(userId, notificationId?)` — Mark one or all as read
-- [ ] `createNotification(userId, data)` — Insert notification → BP §8 (Notification Flow)
+- [x] `listNotifications(userId, filters)` — Paginated, supports type filter, ordered by created_at DESC.
+- [x] `getUnreadCount(userId)` — Count of unread.
+- [x] `markAsRead(userId, notificationId?)` — Mark single or all as read.
+- [x] `createNotification(userId, data)` — Insert with type, title, description, link.
+- [x] Tests: 6 tests in `src/__tests__/phase-3/notifications.test.ts` — all pass.
 
 ### Step 3.8: `contact-submissions.ts`
 > Ref: BP §5 (API Routes — Contact Submissions), BP §4 (Schema — `contact_form_submissions` table), BP §6 (Integration — Contact Form Webhook)
