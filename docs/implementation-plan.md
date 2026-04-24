@@ -398,16 +398,17 @@ export {};
 - [x] Token exchange function → BP §3 (Auth Flow step 4)
 - [x] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
 
-### Step 2.2: JWT session management
+### Step 2.2: JWT session management ✅ DONE
 > Ref: BP §3 (Auth — JWT Payload, Cookie Configuration), SO §3 (Cookie Isolation)
 > Commit: `feat(auth): add JWT session management with management-specific cookie`
 > Files: `src/lib/auth/session.ts`
 
-- [ ] Create `src/lib/auth/session.ts`
-- [ ] JWT creation with payload: `userId`, `email`, `name`, `role` (no `organizationId`) → BP §3 (JWT Payload)
-- [ ] JWT verification function
-- [ ] Cookie name: `flux-management-session` → BP §3 (Cookie Configuration), SO §3 (Cookie Isolation)
-- [ ] Cookie config: HTTP-only, Secure, SameSite=Lax, 24h expiry → BP §3 (Cookie Configuration)
+- [x] Create `src/lib/auth/session.ts`
+- [x] JWT creation with payload: `userId`, `email`, `name`, `role` (no `organizationId`) → BP §3 (JWT Payload)
+- [x] JWT verification function
+- [x] Cookie name: `flux-management-session` → BP §3 (Cookie Configuration), SO §3 (Cookie Isolation)
+- [x] Cookie config: HTTP-only, Secure, SameSite=Lax, 24h expiry → BP §3 (Cookie Configuration)
+- [x] Session revocation via in-memory JTI set
 
 ### Step 2.3: Auth middleware
 > Ref: BP §3 (Auth — Middleware), BP §5 (API Routes — Route Handler Pattern), SO §4 (Role-Based Access Control — Enforcement Pattern)
