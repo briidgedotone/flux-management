@@ -863,79 +863,75 @@ export {};
 
 ## Phase 8 — Deployment
 
-### Step 8.1: Azure App Service provisioning
+> **Status update (April 25, 2026):** Most Phase 8 items are now unblocked.
+> - Production DB exists (shared with client portal): `flux-clientportal-prod-db.postgres.database.azure.com`
+> - Azure AD app registered + consent granted
+> - Deploy via Vercel (same as client portal)
+> - Use `development@flux.tech` as email sender until dedicated address provided
+>
+> **Still blocked on Brandon:** M365 Group IDs (Planner write-back), production domain DNS, user role confirmation
+
+### Step 8.1: Deploy to Vercel ✅ UNBLOCKED (was: Azure App Service provisioning)
 > Ref: BP §2 (Azure Infrastructure — Resources Required), BP §9 (Security — Network-Level Restrictions), SO §7 (Network Security)
 > Commit: `chore(infra): provision Azure App Service for management portal`
 > Files: Azure portal configuration (no code files)
-> Phase Strategy: **Blocked** — needs Azure subscription/resource group from Brandon
+> Phase Strategy: **Can do now** — use Vercel like client portal, no Azure App Service needed
 
-- [ ] Create Azure App Service for management portal → BP §2 (App Service #2)
-- [ ] Configure environment variables from Key Vault → BP §2 (Environment Variables), SO §8 (Secrets Management)
-- [ ] Configure custom domain (`management.fluxtech.com`) → BP §2
-- [ ] Enable HTTPS
-- [ ] Configure IP whitelist (recommended) → SO §7 (Azure App Service Level)
+- [ ] Create new Vercel project, link `flux-management` repo
+- [ ] Configure env vars in Vercel (DATABASE_URL, Azure AD credentials, API keys)
+- [ ] Set up preview + production deployments
+- [ ] Verify build passes on Vercel
 
-### Step 8.2: Azure AD app registration
-> Ref: BP §3 (Auth — Azure AD Setup: app name, redirect URI, permissions list)
-> Commit: `chore(infra): register management portal in Azure AD with API permissions`
-> Files: Azure portal configuration, `.env.local` (update client ID)
-> Phase Strategy: **Blocked** — needs admin consent for `Tasks.ReadWrite.All` from Brandon
+### Step 8.2: Azure AD app registration ✅ DONE
+> Completed April 25, 2026
 
-- [ ] Register `flux-management-dev` in Azure AD → BP §3 (Azure AD Setup)
-- [ ] Configure redirect URIs → BP §3 (Redirect URI)
-- [ ] Request admin consent for API permissions → BP §3 (API Permissions list: User.Read, Tasks.ReadWrite.All, Sites.Read.All, Mail.Send, Group.Read.All)
-- [ ] Verify `Tasks.ReadWrite.All` is granted → EA §Microsoft Graph API (Planner write requires this)
+- [x] Registered `flux-management-dev` in Azure AD
+- [x] Admin consent granted for all 5 permissions (User.Read, Tasks.ReadWrite.All, Sites.Read.All, Mail.Send, Group.Read.All)
+- [x] Redirect URI configured for dev (`http://localhost:3001/api/auth/callback`)
+- [x] SSO tested and working on localhost
+- [ ] Add production redirect URI when domain is decided
 
-### Step 8.3: Run migrations on production database
-> Ref: BP §4 (Database Schema — Migration files)
-> Commit: `chore(db): run management table migrations on production database`
-> Files: no code changes — migration run on production DB
-> Phase Strategy: **Blocked** — needs production database access
+### Step 8.3: Run migrations on production database ✅ UNBLOCKED
+> Phase Strategy: **Can do now** — production DB exists: `flux-clientportal-prod-db.postgres.database.azure.com`, database `fluxdb`. Same shared DB as client portal. Admin credentials available from client portal setup.
 
-- [ ] Run `005_management_tables.sql` on production PostgreSQL → BP §4 (7 new tables)
-- [ ] Run `006_extend_user_roles.sql` on production PostgreSQL → BP §4 (extend role enum)
-- [ ] Verify tables created correctly
-- [ ] Verify existing client portal tables are unaffected
+- [ ] Connect to production PostgreSQL using admin credentials
+- [ ] Run `005_management_tables.sql` (7 new tables)
+- [ ] Run `006_extend_user_roles.sql` (extend role enum with `co-ceo`)
+- [ ] Verify tables created, client portal tables unaffected
 
-### Step 8.4: Seed production data
-> Ref: BP §1 (Architecture — Target Users table), BP §4 (Schema — `client_profiles`, `team_members`)
-> Commit: `chore(db): seed production management users and client profiles`
-> Files: no code changes — seed run on production DB
-> Phase Strategy: **Blocked** — needs production database access
+### Step 8.4: Seed production data ✅ UNBLOCKED
+> Phase Strategy: **Can do now** — once migrations are applied
 
-- [ ] Add management users (Brandon Devier, Zack Devier, Brandon Herring) → BP §1 (Target Users)
-- [ ] Create `client_profiles` for existing organizations → BP §4 (table 1)
-- [ ] Create `team_members` entries → BP §4 (table 2)
+- [ ] Run `npm run db:seed` against production DB
+- [ ] Seed `client_profiles` for Armada and OnPoint
+- [ ] Seed `team_members` for Brandon, Zack, Cameron
+- [ ] User role updates (`co-ceo`, `director`) — pending confirmation from Brandon (commented out in seed)
 
-### Step 8.5: CI/CD pipeline
-> Ref: BP §2 (Azure Infrastructure)
-> Commit: `ci(infra): add CI/CD pipeline for build, test, and deploy`
-> Files: `.github/workflows/deploy.yml` (or Azure DevOps pipeline)
-> Phase Strategy: **Blocked** — needs Azure infrastructure from Steps 8.1-8.2
+### Step 8.5: Deploy + configure ✅ UNBLOCKED
+> Phase Strategy: **Can do now** — Vercel deployment, `development@flux.tech` as temp email sender
 
-- [ ] Configure GitHub Actions or Azure DevOps
-- [ ] Build → Test → Deploy on push to `main`
-- [ ] Environment-specific configuration
+- [ ] Deploy to Vercel with production env vars
+- [ ] Set `AZURE_AD_REDIRECT_URI` to production callback URL
+- [ ] Set `NEXT_PUBLIC_APP_URL` to Vercel URL (custom domain later)
+- [ ] Set `NOTIFICATION_SENDER_EMAIL=development@flux.tech` (until dedicated address provided)
+- [ ] Verify build + deployment succeeds
 
 ### Step 8.6: Post-deployment verification + merge
-> Ref: BP §3 (Auth Flow), BP §6 (Integration Details), BP §7 (AI Assistant), BP §8 (Notifications)
-> Commit: `docs(infra): post-deployment verification complete, merge to main`
-> Files: `docs/implementation-plan.md` (final ✅ DONE markings)
-> Phase Strategy: **Blocked** — requires all Phase 8 steps complete
+> Phase Strategy: **Can do after Steps 8.1-8.5**
 
-- [ ] Verify Azure AD login works → BP §3 (Auth Flow steps 1-8)
-- [ ] Verify cross-org data access → SO §2 (Data Access Model)
-- [ ] Verify task write-back to Planner → BP §6 (Task Write-Back), EA §Planner Write-Back
-- [ ] Verify email notifications → BP §8 (Notification System), EA §Outlook Mail
-- [ ] Verify AI assistant with real data → BP §7 (AI Assistant — cross-org context)
-- [ ] Run security checklist → SO §10 (Code Review Checklist)
+- [ ] Verify Azure AD login works on production
+- [ ] Verify cross-org data access (dashboard shows real client data)
+- [ ] Verify AI assistant with real data
+- [ ] Planner write-back — **still blocked** (needs M365 Group IDs from Brandon)
+- [ ] Email notifications — test with `development@flux.tech`
+- [ ] Run security checklist
 - [ ] Merge `feat/backend-implementation` → `main`
 
 ---
 
 ## Progress Summary
 
-> **Last updated:** April 24, 2026
+> **Last updated:** April 25, 2026
 
 | Phase | Steps | Done | Status |
 |-------|-------|------|--------|
@@ -947,8 +943,8 @@ export {};
 | 5. Integrations | 4 | 4 | ✅ Complete (Planner write-back, Claude AI, email sender, webhook) |
 | 6. Frontend Integration | 13 | 11 | 🟡 Steps 6.9 (reports wiring) and 6.13 (mock cleanup) pending |
 | 7. Security Hardening | 5 | 5 | ✅ Complete (154 tests, security checklist passed) |
-| 8. Deployment | 6 | 0 | ❌ Blocked on Brandon (Azure AD app registration + infrastructure) |
-| **Total** | **69** | **61** | **88% complete** |
+| 8. Deployment | 6 | 1 | 🟡 Step 8.2 done (Azure AD). Steps 8.1, 8.3-8.5 unblocked. Step 8.6 after deploy. |
+| **Total** | **69** | **62** | **90% complete** |
 
 ### What's Complete
 - **Database:** 12 query modules covering all 24 tables, parameterized SQL, `is_active` filter on all cross-org queries
@@ -959,20 +955,22 @@ export {};
 - **Testing:** 111 automated tests (session, middleware, auth routes, all query modules), R56 verified (no state leakage)
 
 ### What's Pending (can do now)
-- **Step 6.9:** Wire reports page to `useRevenueReport()`, `useSlaReport()`, etc.
+- **Step 6.9:** Wire reports page to hooks
 - **Step 6.13:** Remove mock data files after all pages verified
-- **Phase 7:** Security hardening tests (rate limiting, role access, input validation, audit logging, `is_active` filter)
+- **Phase 8:** Deploy to Vercel, run production migrations, seed data — all unblocked
 
 ### What's Done (from Brandon)
 - **Azure AD app registration** (`flux-management-dev`) — created, admin consent granted (April 25, 2026)
 - **API permissions granted:** `User.Read`, `Tasks.ReadWrite.All`, `Sites.Read.All`, `Mail.Send`, `Group.Read.All`
 - **Azure AD SSO login** — tested and working on localhost:3001
 
-### What's Still Pending from Brandon
-- **User role confirmation** — Brandon/Zack as `co-ceo`, Cameron as `employee`
-- **M365 Group IDs** — which Planner plans map to which client orgs
-- **Production email sender** — dedicated address for management notifications
-- **Production DATABASE_URL** — management portal connection to shared Azure PostgreSQL
-- **Migrations 005-006 on production** — 7 new management tables need to be applied
-- **Deployment platform decision** — Vercel (like client portal) vs Azure App Service
-- **Production domain** — DNS for management portal (e.g., `management.fluxtech.com`)
+### What Was Thought Blocked But Is Actually Unblocked
+- **Production DATABASE_URL** — same shared DB as client portal (`flux-clientportal-prod-db.postgres.database.azure.com`, `fluxdb`). Credentials available from client portal setup.
+- **Migrations 005-006 on production** — can run ourselves with admin credentials
+- **Deployment platform** — Vercel (same as client portal). No Azure App Service needed.
+- **Production email sender** — use `development@flux.tech` for now (same as client portal dev)
+
+### What's Actually Still Blocked on Brandon
+- **M365 Group IDs** — which Planner plans map to which client orgs (blocks Planner write-back testing)
+- **Production domain + DNS** — need Brandon to configure DNS for management portal
+- **User role confirmation** — Brandon/Zack as `co-ceo`, Cameron as `director` or `employee`
