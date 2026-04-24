@@ -12,6 +12,7 @@ import {
   UsersThreeIcon,
   PlugsIcon,
 } from "@phosphor-icons/react";
+import { useAuth } from "@/hooks/use-auth";
 import { PageHeader } from "@/components/shared/page-header";
 
 type SettingsTab = "general" | "team" | "integrations" | "notifications" | "security";
@@ -24,28 +25,32 @@ const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: "security", label: "Security", icon: <LockIcon size={18} weight="light" /> },
 ];
 
-function GeneralTab() {
+function GeneralTab({ user }: { user: { name: string; email: string; role: string } | null }) {
+  const initials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <div className="relative">
           <div className="w-16 h-16 rounded-full bg-navy-80 flex items-center justify-center text-white font-[family-name:var(--font-aptos)] font-semibold text-xl">
-            AR
+            {initials}
           </div>
           <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-blue text-white flex items-center justify-center shadow-level-1">
             <CameraIcon size={14} weight="light" />
           </button>
         </div>
         <div>
-          <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-lg text-text-primary">Alex Rivera</h3>
-          <p className="text-sm text-text-secondary">Co-CEO</p>
+          <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-lg text-text-primary">{user?.name ?? "Loading..."}</h3>
+          <p className="text-sm text-text-secondary">{user?.role ?? ""}</p>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[
-          { label: "Full Name", value: "Alex Rivera" },
-          { label: "Email", value: "alex@fluxtechnologies.com" },
-          { label: "Role", value: "Co-CEO" },
+          { label: "Full Name", value: user?.name ?? "" },
+          { label: "Email", value: user?.email ?? "" },
+          { label: "Role", value: user?.role ?? "" },
           { label: "Company", value: "Flux Technologies" },
           { label: "Phone", value: "+1 (555) 100-2000" },
           { label: "Timezone", value: "Eastern Time (ET)" },
@@ -216,6 +221,8 @@ function SecurityTab() {
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("general");
+  const { data: rawAuth } = useAuth();
+  const user = (rawAuth as any)?.data as { name: string; email: string; role: string } | null ?? null;
 
   return (
     <div className="space-y-6">
@@ -238,7 +245,7 @@ export default function SettingsPage() {
           </nav>
         </div>
         <div className="flex-1 bg-white rounded-2xl shadow-level-1 border border-ice/40 p-7">
-          {activeTab === "general" && <GeneralTab />}
+          {activeTab === "general" && <GeneralTab user={user} />}
           {activeTab === "team" && <TeamManagementTab />}
           {activeTab === "integrations" && <IntegrationsTab />}
           {activeTab === "notifications" && <NotificationsTab />}
