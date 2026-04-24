@@ -593,18 +593,23 @@ export {};
 
 ## Phase 4 — API Routes
 
-### Step 4.1: API response helpers + Zod validation schemas
+### Step 4.1: API response helpers + Zod validation schemas ✅ DONE
 > Ref: BP §5 (API Routes — API Response Format, Route Handler Pattern), SO §9 (API Security — Input Validation, Error Responses)
-> Commit: `feat(api): add response helpers, rate limiter, and Zod validation schemas`
+> Commit: `feat(api): add Zod validation schemas for all API inputs`
 > Files: `src/lib/api/response.ts`, `src/lib/api/rate-limit.ts`, `src/lib/validators/*.ts`
-> Phase Strategy: Can build now — pure code, no external APIs
 
-- [ ] Create `src/lib/api/response.ts` — `successResponse()`, `paginatedResponse()`, `Errors.*` → BP §5 (Response Format)
-- [ ] Create `src/lib/api/rate-limit.ts` — Rate limiter utility → SO §6 (Rate Limiting table)
-- [ ] Create Zod schemas in `src/lib/validators/` → SO §9 (Input Validation: "All inputs validated with Zod schemas before processing"):
-  - `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`
-  - `reports.ts`, `ai.ts`, `notifications.ts`
-  - `contact-submissions.ts`, `settings.ts`
+- [x] `src/lib/api/response.ts` — Already implemented in Step 2.3 (`successResponse`, `paginatedResponse`, `Errors.*`)
+- [x] `src/lib/api/rate-limit.ts` — Already implemented in Step 2.3 (AUTH, AI_CHAT, REPORTS, WEBHOOK, DEFAULT)
+- [x] Zod schemas created for all 9 domains:
+  - `clients.ts` — list, id, update, stats schemas
+  - `tickets.ts` — list, id, stats, internalNote, chartData schemas
+  - `projects.ts` — list, id, stats, createTask, updateTask, taskId schemas
+  - `team.ts` — memberId, update schemas
+  - `reports.ts` — reportRange, ticketAnalytics schemas
+  - `ai.ts` — chatMessage, conversationId schemas
+  - `notifications.ts` — list, markRead schemas
+  - `contact-submissions.ts` — list, id, update, webhookSubmission schemas
+  - `settings.ts` — profileUpdate schema
 
 ### Step 4.2: Dashboard endpoint
 > Ref: BP §5 (API Routes — Dashboard)
