@@ -490,18 +490,20 @@ export {};
 - [x] `addInternalNote(ticketId, authorId, content)` — Insert into `internal_notes` table.
 - [x] Tests: 12 tests in `src/__tests__/phase-3/tickets.test.ts` — all pass.
 
-### Step 3.3: `projects.ts`
+### Step 3.3: `projects.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Projects), BP §4 (Schema — shared `projects`, `project_tasks` tables), BP §6 (Integration — Task Write-Back)
 > Security: SO §5 (audit log on task CRUD), EA §Microsoft Graph API (Planner write rules)
 > Commit: `feat(db): add project query module with task CRUD operations`
 > Files: `src/lib/db/queries/projects.ts`
 
-- [ ] `listProjects(filters)` — Cross-org with status/client filters → BP §5 (GET /api/projects)
-- [ ] `getProject(projectId)` — Detail with tasks, assignees, tech stack → BP §5 (GET /api/projects/:id)
-- [ ] `getProjectStats(filters)` — Cross-client project summary → BP §5 (GET /api/projects/stats). **Must include `WHERE o.is_active = true`** → BP §10, SO §11 Rule 7
-- [ ] `createTask(projectId, data)` — Insert into `project_tasks` → BP §5 (POST /api/projects/:id/tasks), BP §6 (dual-write: DB + Planner)
-- [ ] `updateTask(taskId, data)` — Update `project_tasks` row → BP §5 (PUT /api/projects/:id/tasks/:taskId)
-- [ ] `deleteTask(taskId)` — Delete from `project_tasks` → BP §5 (DELETE, co-ceo/director any task, employee own tasks only)
+- [x] `listProjects(filters)` — Cross-org with status/client/search filters, pagination, sorting. `WHERE o.is_active = true` enforced (R11).
+- [x] `getProject(projectId)` — Detail with tasks and assignees. No `is_active` filter (R13).
+- [x] `getProjectStats(filters)` — Cross-client summary: on-track/at-risk/delayed, avg progress, task totals. `is_active` filter enforced (R11).
+- [x] `createTask(projectId, orgId, data)` — Insert into `project_tasks` with generated `planner_task_id`.
+- [x] `updateTask(taskId, data)` — Dynamic field update. Sets `completed_at` when status is Complete.
+- [x] `deleteTask(taskId)` — Delete from `project_tasks`. Returns boolean.
+- [x] `getTaskById(taskId)` — For ownership checks in API layer.
+- [x] Tests: 13 tests in `src/__tests__/phase-3/projects.test.ts` — all pass.
 
 ### Step 3.4: `team.ts`
 > Ref: BP §5 (API Routes — Team), BP §4 (Schema — `team_members` table + shared `users` table)
