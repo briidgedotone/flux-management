@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   BuildingsIcon, MagnifyingGlassIcon, FunnelIcon, PlusIcon, CaretRightIcon,
 } from "@phosphor-icons/react";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { mockClients } from "@/data/mock-clients";
+import { useClients } from "@/hooks/use-clients";
 import type { Client, HealthScore, ContractStatus } from "@/data/types";
 
 const healthDot: Record<HealthScore, string> = {
@@ -16,7 +16,6 @@ const healthDot: Record<HealthScore, string> = {
 const healthLabel: Record<HealthScore, string> = {
   healthy: "Healthy", "at-risk": "At Risk", critical: "Critical",
 };
-const industries = [...new Set(mockClients.map((c) => c.industry))];
 const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export default function ClientsPage() {
@@ -26,15 +25,13 @@ export default function ClientsPage() {
   const [healthFilter, setHealthFilter] = useState<HealthScore | "">("");
   const [contractFilter, setContractFilter] = useState<ContractStatus | "">("");
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return mockClients.filter((c: Client) =>
-      (!q || c.companyName.toLowerCase().includes(q) || c.primaryContact.name.toLowerCase().includes(q)) &&
-      (!industryFilter || c.industry === industryFilter) &&
-      (!healthFilter || c.healthScore === healthFilter) &&
-      (!contractFilter || c.contractStatus === contractFilter)
-    );
-  }, [search, industryFilter, healthFilter, contractFilter]);
+  const { data: clientsResponse, isLoading } = useClients({
+    search: search || undefined,
+    industry: industryFilter || undefined,
+    healthScore: healthFilter || undefined,
+    contractStatus: contractFilter || undefined,
+  });
+  const filtered = (clientsResponse as { data?: Client[] })?.data ?? [];
 
   const columns = ["Company Name", "Primary Contact", "Industry", "Health Score", "Contract", "Monthly Revenue", "Open Tickets", "SLA", ""];
 
@@ -66,7 +63,7 @@ export default function ClientsPage() {
           <FunnelIcon size={16} weight="light" className="text-text-muted" />
           <select value={industryFilter} onChange={(e) => setIndustryFilter(e.target.value)} className="text-xs border border-ice rounded-lg px-3 py-2 bg-white text-text-secondary focus:outline-none">
             <option value="">All Industries</option>
-            {industries.map((i) => <option key={i} value={i}>{i}</option>)}
+            {["Financial Services", "Professional Services", "Technology", "Healthcare", "Legal"].map((i) => <option key={i} value={i}>{i}</option>)}
           </select>
           <select value={healthFilter} onChange={(e) => setHealthFilter(e.target.value as HealthScore | "")} className="text-xs border border-ice rounded-lg px-3 py-2 bg-white text-text-secondary focus:outline-none">
             <option value="">All Health</option>

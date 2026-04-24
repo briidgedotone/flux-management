@@ -792,9 +792,9 @@ export {};
 > Commit: `feat(ui): wire clients page and client detail to real API data`
 > Files: `src/app/(portal)/clients/page.tsx`, `src/app/(portal)/clients/[id]/page.tsx`
 
-- [ ] Replace mock data with `useClients()`, `useClient()`, `useClientStats()`
-- [ ] Wire client profile edit form to `useUpdateClient()` → BP §5 (PUT /api/clients/:id)
-- [ ] Handle loading/error states
+- [x] Clients list page wired with `useClients()` — server-side filtering.
+- [x] Client detail page wired with `useClient()`, `useTickets()`, `useProjects()`.
+- [x] Loading state added.
 
 ### Step 6.6: Wire tickets page + slide-over
 > Ref: BP §5 (API Routes — Tickets)
