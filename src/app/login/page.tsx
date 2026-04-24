@@ -1,39 +1,23 @@
 "use client";
 
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { ArrowRightIcon } from "@phosphor-icons/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { EyeIcon, EyeSlashIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import { FluxLogo } from "@/components/shared/flux-logo";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  auth_failed: "Authentication failed. Please try again.",
-  access_denied: "You do not have access to the management portal.",
-  account_disabled: "Your account has been deactivated. Contact an administrator.",
-  rate_limited: "Too many login attempts. Please wait a moment.",
-};
-
 export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginContent />
-    </Suspense>
-  );
-}
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-function LoginContent() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get("error");
-  const isDev = process.env.NODE_ENV === "development";
-
-  const handleSSO = () => {
-    window.location.href = "/api/auth/login";
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push("/dashboard");
   };
 
-  const handleDevLogin = (email?: string) => {
-    const url = email
-      ? `/api/auth/dev-login?email=${encodeURIComponent(email)}`
-      : "/api/auth/dev-login";
-    window.location.href = url;
+  const handleSSO = () => {
+    router.push("/dashboard");
   };
 
   return (
@@ -80,52 +64,74 @@ function LoginContent() {
             Sign in to your management portal
           </p>
 
-          {/* Error message */}
-          {error && ERROR_MESSAGES[error] && (
-            <div className="mb-6 p-3 bg-danger/10 border border-danger/20 rounded-xl text-sm text-danger">
-              {ERROR_MESSAGES[error]}
-            </div>
-          )}
-
           {/* SSO Button */}
           <button
             onClick={handleSSO}
-            className="w-full h-12 bg-blue hover:bg-blue-light text-white font-medium text-sm rounded-xl btn-premium shadow-level-1 flex items-center justify-center gap-2 transition-colors duration-150"
+            className="w-full h-12 bg-blue hover:bg-blue-light text-white font-medium text-sm rounded-xl btn-premium shadow-level-1 flex items-center justify-center gap-2 transition-colors duration-150 mb-6"
           >
             Sign in with Microsoft SSO
             <ArrowRightIcon size={16} weight="light" />
           </button>
 
-          <p className="text-xs text-text-muted text-center mt-6">
-            Access restricted to Flux Technologies team members.
-          </p>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 border-t border-ice" />
+            <span className="text-xs text-text-muted">or continue with email</span>
+            <div className="flex-1 border-t border-ice" />
+          </div>
 
-          {/* Dev login bypass — development only */}
-          {isDev && (
-            <div className="mt-8 pt-6 border-t border-ice">
-              <p className="text-xs text-text-muted mb-3 font-medium uppercase tracking-wider">Dev Login (local only)</p>
-              <div className="space-y-2">
+          {/* Email/Password Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-medium uppercase tracking-[0.08em] text-text-muted mb-1.5">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="sarah@company.com"
+                className="w-full h-12 bg-white border border-ice/60 rounded-xl shadow-level-1 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-blue focus:ring-2 focus:ring-blue-10 outline-none transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-medium uppercase tracking-[0.08em] text-text-muted mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full h-12 bg-white border border-ice/60 rounded-xl shadow-level-1 px-3 pr-10 text-sm text-text-primary placeholder:text-text-muted focus:border-blue focus:ring-2 focus:ring-blue-10 outline-none transition-colors"
+                />
                 <button
-                  onClick={() => handleDevLogin()}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
+                  type="button"
+                  onClick={() => setShowPassword((p) => !p)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
                 >
-                  Brandon Devier (Co-CEO)
-                </button>
-                <button
-                  onClick={() => handleDevLogin("zack@fluxtech.com")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
-                >
-                  Zack Devier (Co-CEO)
-                </button>
-                <button
-                  onClick={() => handleDevLogin("cameron@fluxtech.com")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
-                >
-                  Cameron (Employee)
+                  {showPassword ? <EyeSlashIcon size={18} weight="light" /> : <EyeIcon size={18} weight="light" />}
                 </button>
               </div>
             </div>
-          )}
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 rounded border-ice text-blue focus:ring-blue" />
+                <span className="text-xs text-text-secondary">Remember me</span>
+              </label>
+              <button type="button" className="text-xs text-blue hover:underline">
+                Forgot password?
+              </button>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full h-12 bg-navy hover:bg-navy-80 text-white font-medium text-sm rounded-xl shadow-level-1 transition-colors duration-150"
+            >
+              Sign In
+            </button>
+          </form>
         </div>
       </div>
     </div>

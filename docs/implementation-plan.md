@@ -195,7 +195,6 @@ Before committing (commit after EVERY step):
 - [x] Push branch to remote
 
 ### Step 0.2: Install backend dependencies ✅ DONE
-> **Note:** Verified — all 30 commits follow `type(scope): description` convention, no Co-Authored-By lines.
 > Ref: BP §2 (Azure Infrastructure — Environment Variables)
 > Commit: `chore(deps): add backend dependencies for Azure, PostgreSQL, Graph API, and Claude`
 > Files: `package.json`, `package-lock.json`
@@ -309,149 +308,150 @@ export {};
 - [x] Add connection error handling (`pool.on("error")`)
 - [x] Test connection — verified: `SELECT 1` works, 4 organizations visible (3 real + 1 test)
 
-### Step 1.2: Write migration `005_management_tables.sql` ✅ DONE
+### Step 1.2: Write migration `005_management_tables.sql`
 > Ref: BP §4 (Database Schema — New Tables, full SQL for all 7 tables)
 > Commit: `feat(db): add management tables migration with 7 new tables`
 > Files: `src/lib/db/migrations/005_management_tables.sql`
 > Phase Strategy: Can build now — local PostgreSQL, no external dependency
 
-- [x] Create 7 new tables: `client_profiles`, `team_members`, `internal_notes`, `activity_log`, `report_snapshots`, `contact_form_submissions`, `management_notifications`
-- [x] Add all indexes (10 indexes across 7 tables)
-- [x] Wrap in `BEGIN/COMMIT` transaction
-- [x] Use `CREATE TABLE IF NOT EXISTS` for idempotency
-- [x] Migration applied to local DB with admin user
-- [x] Granted SELECT/INSERT/UPDATE/DELETE to `flux_app` user on all 7 tables
-- [x] Added `DATABASE_ADMIN_URL` to `.env.example` and `.env.local`
+- [ ] Create 7 new tables as specified in BP §4:
+  - `client_profiles` → BP §4 table 1
+  - `team_members` → BP §4 table 2
+  - `internal_notes` → BP §4 table 3
+  - `activity_log` → BP §4 table 4, SO §5 (Audit Logging)
+  - `report_snapshots` → BP §4 table 5
+  - `contact_form_submissions` → BP §4 table 6
+  - `management_notifications` → BP §4 table 7, BP §8 (Notification System)
+- [ ] Add all indexes as specified in BP §4 (each table's `CREATE INDEX` statements)
+- [ ] Wrap in `BEGIN/COMMIT` transaction
+- [ ] Use `CREATE TABLE IF NOT EXISTS` for idempotency
 
-### Step 1.3: Write migration `006_extend_user_roles.sql` ✅ DONE
+### Step 1.3: Write migration `006_extend_user_roles.sql`
 > Ref: BP §4 (Database Schema — Migration: `006_extend_user_roles.sql`), BP §3 (Auth — Roles & Permissions Matrix)
 > Commit: `feat(db): extend user role constraint to include co-ceo`
 > Files: `src/lib/db/migrations/006_extend_user_roles.sql`
 > Phase Strategy: Can build now — local PostgreSQL
 
-- [x] Drop existing `users_role_check` constraint
-- [x] Add new constraint: `CHECK (role IN ('client', 'employee', 'director', 'admin', 'co-ceo'))`
-- [x] Migration applied — verified `co-ceo` accepted, existing roles intact
-- [x] Test seed now works end-to-end (4 users, 5 tickets, 2 projects)
+- [ ] Drop existing `users_role_check` constraint
+- [ ] Add new constraint allowing `co-ceo` role:
+  `CHECK (role IN ('client', 'employee', 'director', 'admin', 'co-ceo'))`
 
-### Step 1.4: Write production seed script ✅ DONE
+### Step 1.4: Write production seed script
 > Ref: BP §4 (Database Schema), BP §3 (Auth — Target Users: Brandon Devier, Zack Devier, Brandon Herring)
 > **IMPORTANT:** This is the PRODUCTION seed script. It must NEVER contain test data. → SO §11 Rule 12
 > Commit: `feat(db): add migration runner and production seed with management users`
 > Files: `src/lib/db/seed.ts`, `src/lib/db/migrate.ts`, `package.json`
 > Phase Strategy: Can build now — local PostgreSQL
 
-- [x] Create `src/lib/db/seed.ts` — production data only, no test org, no test users
-- [x] Add migration runner `src/lib/db/migrate.ts` — uses same `_migrations` table as client portal, only runs 005-006
-- [ ] **TODO:** User role updates (co-ceo, director, org_id=NULL) — commented out, waiting for Brandon to confirm roles
-- [x] Seed: `client_profiles` for Armada ($42K/mo, Financial Services) and OnPoint ($28K/mo, Professional Services)
-- [x] Seed: `team_members` for Brandon (Leadership), Zack (Leadership), Cameron (Services)
-- [x] Added scripts: `db:migrate`, `db:migrate:dry`, `db:seed`
-- [x] Migration runner idempotent — second run says "all migrations already applied"
-- [x] **Verified:** zero test data references in production seed (SO §11 Rule 12)
-- [x] **Verified:** user roles NOT modified — kept as original (admin, employee, director)
+- [ ] Create `src/lib/db/seed.ts` — **production data only, no test org, no test users**
+- [ ] Add migration runner `src/lib/db/migrate.ts`
+  - **IMPORTANT:** Use the same `_migrations` tracking table as the client portal (the client portal's runner creates `_migrations` table and records applied filenames)
+  - The runner must check `_migrations` for already-applied files and only run pending ones
+  - Only include 005-006 in the management portal's `migrations/` folder — never 001-004 (those belong to the client portal repo)
+  - Adapt the pattern from `Flux-client/src/lib/db/migrate.ts`
+- [ ] Seed management users (Brandon Devier as co-ceo, Brandon Herring as director, etc.) → BP §1 (Target Users table)
+- [ ] Seed `client_profiles` for existing organizations (Armada, OnPoint, etc.) → BP §4 table 1
+- [ ] Seed `team_members` entries for management users → BP §4 table 2
+- [ ] Add `npm run db:migrate` and `npm run db:seed` scripts to package.json
+- [ ] Run migrations and seed on dev database
+- [ ] Verify tables created correctly
+- [ ] **Verify:** test org (`flux-qa-internal`) is NOT in `src/lib/db/seed.ts` → SO §11 Rule 12
 
-### Step 1.5: Verify test infrastructure against new tables ✅ DONE
+### Step 1.5: Verify test infrastructure against new tables
 > Ref: BP §10 (Test Strategy), SO §11 (Test Data Isolation)
 > Commit: `test(db): update test seed and cleanup for management tables`
 > Files: `src/__tests__/seed-test-data.ts`, `src/__tests__/cleanup.ts`
 > Phase Strategy: Can build now — follows Step 0.6 test infrastructure
 
-- [x] Updated `src/__tests__/seed-test-data.ts` — now seeds: 1 client_profile, 3 team_members, 1 internal_note, 5 management_notifications, 3 contact_form_submissions
-- [x] Cleanup already handles all management tables (safeDelete from Step 0.6)
-- [x] Verified: seed creates data in all management tables
-- [x] Verified: cleanup removes ALL test data (0 rows left in every test table)
-- [x] Verified: test org persists after cleanup (permanent fixture)
-- [x] Verified: real seed data (Armada/OnPoint profiles, team members) NOT deleted by cleanup
-- [x] Verified: real tickets (1,611) intact
+- [ ] Update `src/__tests__/seed-test-data.ts` to include seed data for all 7 new management tables
+- [ ] Update `src/__tests__/cleanup.ts` to include cleanup for all 7 new management tables (in FK order)
+- [ ] Run `npm test` → verify test seed creates data in new tables
+- [ ] Run `npm test` → verify cleanup removes all test data from new tables
+- [ ] Verify real seed data (from Step 1.4) is NOT deleted by test cleanup
 
-### Step 1.6: Verify client portal still works ✅ DONE
+### Step 1.6: Verify client portal still works
 > Ref: Shared database — migrations must not break existing portal
 > Commit: _(no commit — verification only)_
 > Files: none (verification step)
 > Phase Strategy: Critical safety check
 
-- [x] Client portal `npm run build` — passes, all routes compile (30+ API routes, 8 portal pages)
-- [x] Management portal `npm run build` — passes, all routes compile (14 pages)
-- [x] Confirmed: migrations 005-006 did not break the existing client portal
+- [ ] Start the client portal (`cd ../Flux-client && npm run dev`)
+- [ ] Verify dashboard loads with real data
+- [ ] Verify tickets page loads
+- [ ] Verify no errors in browser console related to database schema
+- [ ] Stop the client portal
+- [ ] This confirms migrations 005-006 did not break the existing client portal
 
 ---
 
 ## Phase 2 — Authentication
 
-### Step 2.1: Azure AD configuration helper ✅ DONE
+### Step 2.1: Azure AD configuration helper
 > Ref: BP §3 (Auth — Azure AD Setup, Auth Flow steps 1-4), SO §3 (Authentication Security — Separate App Registration)
 > Commit: `feat(auth): add Azure AD OAuth2 configuration and helpers`
 > Files: `src/lib/auth/azure-ad.ts`
-> Phase Strategy: **Partially blocked** — code written using client portal as reference. Testing requires Azure AD app registration from Brandon.
+> Phase Strategy: Can build now — we have Azure AD admin access to create app registration
 
-- [x] Create `src/lib/auth/azure-ad.ts`
-- [x] Configure for management app registration (`flux-management-portal`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
-- [x] OAuth2 authorization URL builder with PKCE → BP §3 (Auth Flow step 1-2)
-- [x] Token exchange function → BP §3 (Auth Flow step 4)
-- [x] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
+- [ ] Create `src/lib/auth/azure-ad.ts`
+- [ ] Configure for management app registration (`flux-management-portal`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
+- [ ] OAuth2 authorization URL builder with PKCE → BP §3 (Auth Flow step 1-2)
+- [ ] Token exchange function → BP §3 (Auth Flow step 4)
+- [ ] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
 
-### Step 2.2: JWT session management ✅ DONE
+### Step 2.2: JWT session management
 > Ref: BP §3 (Auth — JWT Payload, Cookie Configuration), SO §3 (Cookie Isolation)
 > Commit: `feat(auth): add JWT session management with management-specific cookie`
 > Files: `src/lib/auth/session.ts`
 
-- [x] Create `src/lib/auth/session.ts`
-- [x] JWT creation with payload: `userId`, `email`, `name`, `role` (no `organizationId`) → BP §3 (JWT Payload)
-- [x] JWT verification function
-- [x] Cookie name: `flux-management-session` → BP §3 (Cookie Configuration), SO §3 (Cookie Isolation)
-- [x] Cookie config: HTTP-only, Secure, SameSite=Lax, 24h expiry → BP §3 (Cookie Configuration)
+- [ ] Create `src/lib/auth/session.ts`
+- [ ] JWT creation with payload: `userId`, `email`, `name`, `role` (no `organizationId`) → BP §3 (JWT Payload)
+- [ ] JWT verification function
+- [ ] Cookie name: `flux-management-session` → BP §3 (Cookie Configuration), SO §3 (Cookie Isolation)
+- [ ] Cookie config: HTTP-only, Secure, SameSite=Lax, 24h expiry → BP §3 (Cookie Configuration)
 
-### Step 2.3: Auth middleware ✅ DONE
+### Step 2.3: Auth middleware
 > Ref: BP §3 (Auth — Middleware), BP §5 (API Routes — Route Handler Pattern), SO §4 (Role-Based Access Control — Enforcement Pattern)
 > Commit: `feat(auth): add withManagementAuth and withRole middleware`
 > Files: `src/lib/auth/middleware.ts`
 
-- [x] Create `src/lib/auth/middleware.ts`
-- [x] `withManagementAuth(request, handler)` — extract JWT, verify, lookup user, pass context → BP §3 (Middleware — withManagementAuth)
-- [x] `withRole(request, allowedRoles, handler)` — restrict by role → BP §3 (Middleware — withRole), SO §4 (Sensitive Endpoints list)
-- [x] `withWebhookAuth(request, handler)` — API key auth for contact form webhook
-- [x] Return 401 for missing/invalid token, 403 for insufficient role → BP §3 (Auth — Role Verification)
-- [x] Reject users with `client` role → SO §3 (Role Verification: "If user role is client, access is denied")
-- [x] Also implemented prerequisites: `src/lib/api/response.ts` (response helpers), `src/lib/api/rate-limit.ts` (rate limiter), `src/lib/db/queries/users.ts` (auth user lookups)
+- [ ] Create `src/lib/auth/middleware.ts`
+- [ ] `withManagementAuth(request, handler)` — extract JWT, verify, lookup user, pass context → BP §3 (Middleware — withManagementAuth)
+- [ ] `withRole(request, allowedRoles, handler)` — restrict by role → BP §3 (Middleware — withRole), SO §4 (Sensitive Endpoints list)
+- [ ] Return 401 for missing/invalid token, 403 for insufficient role → BP §3 (Auth — Role Verification)
+- [ ] Reject users with `client` role → SO §3 (Role Verification: "If user role is client, access is denied")
 
-### Step 2.4: Auth API routes ✅ DONE
+### Step 2.4: Auth API routes
 > Ref: BP §5 (API Routes — Auth Routes), BP §3 (Auth Flow steps 1-8)
 > Commit: `feat(auth): add login, callback, logout, and me API routes`
-> Files: `src/app/api/auth/login/route.ts`, `src/app/api/auth/callback/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`, `src/app/api/auth/dev-login/route.ts`
+> Files: `src/app/api/auth/login/route.ts`, `src/app/api/auth/callback/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`
 
-- [x] `GET /api/auth/login` — Initiate Azure AD OAuth2 flow → BP §3 (Auth Flow steps 1-2)
-- [x] `GET /api/auth/callback` — Exchange code, validate tokens, create session → BP §3 (Auth Flow steps 3-8)
-- [x] `GET /api/auth/logout` — Revoke JTI, clear session cookie
-- [x] `GET /api/auth/me` — Return current user info (no organizationId)
-- [x] `GET /api/auth/dev-login` — Dev-only bypass (ENABLE_TEST_LOGIN=true), rejects client role
-- [x] Callback rejects `client` role users at login time [R25]
-- [x] All routes use port 3001 default URL
+- [ ] `POST /api/auth/login` — Initiate Azure AD OAuth2 flow → BP §3 (Auth Flow steps 1-2)
+- [ ] `GET /api/auth/callback` — Exchange code, validate tokens, create session → BP §3 (Auth Flow steps 3-8)
+- [ ] `GET /api/auth/logout` — Clear session cookie
+- [ ] `GET /api/auth/me` — Return current user info
+- [ ] `GET /api/auth/dev-login` — Dev-only bypass (NODE_ENV=development)
 
-### Step 2.5: Security headers ✅ DONE
+### Step 2.5: Security headers middleware
 > Ref: SO §1 (Security Inheritance — Security headers list), BP §9 (Security — Inherited from Client Portal)
 > Commit: `security(auth): add security headers and CSRF protection`
 > Files: `next.config.ts`
 
-- [x] Add security headers to `next.config.ts`:
-  - Strict-Transport-Security (max-age=63072000, includeSubDomains, preload)
-  - X-Content-Type-Options (nosniff)
-  - X-Frame-Options (DENY)
-  - Content-Security-Policy (default-src 'self', connect-src includes login.microsoftonline.com)
-  - Referrer-Policy (strict-origin-when-cross-origin)
+- [ ] Add security headers to `next.config.ts`:
+  - Strict-Transport-Security → SO §1
+  - X-Content-Type-Options → SO §1
+  - X-Frame-Options → SO §1
+  - Content-Security-Policy → SO §1
+  - Referrer-Policy → SO §1
 
-### Step 2.6: Wire login page + route protection ✅ DONE
+### Step 2.6: Wire login page + route protection
 > Ref: BP §3 (Auth Flow), SO §3 (Role Verification)
 > Commit: `feat(auth): wire login page to Azure AD and add route protection`
 > Files: `src/app/login/page.tsx`, `src/middleware.ts`
 
-- [x] Update login page to call `/api/auth/login` via SSO button
-- [x] Remove mock email/password form (Azure AD is sole auth provider)
-- [x] Add error message display for auth failures (auth_failed, access_denied, account_disabled, rate_limited)
-- [x] Add `src/middleware.ts` for route protection (redirect to `/login` if no `flux-management-session` cookie)
-- [x] Add dev-login bypass buttons for Brandon, Zack, Cameron (dev only)
-- [x] Wrapped `useSearchParams` in Suspense boundary (Next.js 16 requirement)
-- [x] Build verified — all routes compile, middleware active
+- [ ] Update login page to call `/api/auth/login`
+- [ ] Add `middleware.ts` for route protection (redirect to `/login` if no session)
+- [ ] Add dev-login bypass button (dev only)
+- [ ] Verify auth flow end-to-end
 
 ---
 
@@ -553,26 +553,6 @@ export {};
 
 - [ ] `logActivity(userId, action, entityType, entityId, orgId, description, metadata)` — Write audit entry → SO §5 (field definitions)
 - [ ] `listActivityLog(filters)` — By entity, user, or org with pagination
-
-### Step 3.10: `connectors.ts`
-> Ref: BP §4 (Schema — shared `connector_statuses` table), Client portal equivalent: `src/lib/db/queries/connectors.ts`
-> Commit: `feat(db): add connector status query module`
-> Files: `src/lib/db/queries/connectors.ts`
-> Phase Strategy: Can build now — reads shared table, no external APIs
-
-- [ ] `listConnectorStatuses()` — List all integration statuses from `connector_statuses` table
-- [ ] `getConnectorStatus(connectorName)` — Single connector detail
-- [ ] Note: Management portal reads the same `connector_statuses` table that client portal sync jobs write to
-
-### Step 3.11: `report-snapshots.ts`
-> Ref: BP §4 (Schema — `report_snapshots` table)
-> Commit: `feat(db): add report snapshot query module for historical data`
-> Files: `src/lib/db/queries/report-snapshots.ts`
-> Phase Strategy: Can build now — pure PostgreSQL
-
-- [ ] `createSnapshot(reportType, data)` — Save a point-in-time report snapshot
-- [ ] `listSnapshots(reportType, range)` — Historical snapshots for trend comparison
-- [ ] `getLatestSnapshot(reportType)` — Most recent snapshot for cache/fallback
 
 ---
 
@@ -688,14 +668,6 @@ export {};
 - [ ] `GET /api/settings/profile` — Current user's profile
 - [ ] `PUT /api/settings/profile` — Update name, phone, notification prefs → SO §9 (Input Validation)
 
-### Step 4.12: Connectors endpoint
-> Ref: Client portal equivalent: `src/app/api/connectors/route.ts`
-> Commit: `feat(api): add connectors status endpoint`
-> Files: `src/app/api/connectors/route.ts`
-
-- [ ] `GET /api/connectors` — List integration statuses (Atera, Planner, SharePoint sync health)
-- [ ] Wrap with `withManagementAuth` → SO §4
-
 ---
 
 ## Phase 5 — Integrations
@@ -791,8 +763,6 @@ export {};
   - `use-ai.ts` — `useSendMessage()`, `useConversations()`, `useConversation()`, `useDeleteConversation()` → BP §5 (AI endpoints)
   - `use-notifications.ts` — `useNotifications()`, `useUnreadCount()`, `useMarkRead()` → BP §5 (Notifications endpoints)
   - `use-contact-submissions.ts` — `useContactSubmissions()`, `useUpdateSubmission()` → BP §5 (Contact Submissions endpoints)
-  - `use-dashboard.ts` — `useDashboard()` → BP §5 (Dashboard endpoint)
-  - `use-connectors.ts` — `useConnectors()` → reads from shared `connector_statuses` table
 
 ### Step 6.4: Wire dashboard page
 > Ref: BP §5 (API Routes — Dashboard)
@@ -1001,13 +971,10 @@ export {};
 ### Step 8.5: CI/CD pipeline
 > Ref: BP §2 (Azure Infrastructure)
 > Commit: `ci(infra): add CI/CD pipeline for build, test, and deploy`
-> Files: Vercel project configuration (or `.github/workflows/deploy.yml`)
-> Phase Strategy: **Blocked** — needs Azure AD app registration + production env vars
-> **Note:** Client portal deploys via Vercel (Git auto-deploy). Management portal should use the same approach for consistency unless Azure App Service is specifically required. Decide deployment target before starting this step.
+> Files: `.github/workflows/deploy.yml` (or Azure DevOps pipeline)
+> Phase Strategy: **Blocked** — needs Azure infrastructure from Steps 8.1-8.2
 
-- [ ] Decide deployment platform: Vercel (like client portal) vs Azure App Service
-- [ ] If Vercel: link repo, configure env vars, set up preview + production deployments
-- [ ] If Azure: configure GitHub Actions or Azure DevOps
+- [ ] Configure GitHub Actions or Azure DevOps
 - [ ] Build → Test → Deploy on push to `main`
 - [ ] Environment-specific configuration
 
@@ -1029,26 +996,15 @@ export {};
 
 ## Progress Summary
 
-> **Last updated:** April 24, 2026
-
 | Phase | Steps | Done | Status |
 |-------|-------|------|--------|
-| 0. Pre-Implementation Setup | 6 | 6 | ✅ Complete |
-| 1. Database Foundation | 6 | 6 | ✅ Complete |
-| 2. Authentication | 6 | 6 | ✅ Complete (code done, Azure AD testing pending) |
-| 3. Database Query Modules | 11 | 0 | ⏳ Not Started (added 3.10 connectors, 3.11 report-snapshots) |
-| 4. API Routes | 12 | 0 | ⏳ Not Started (added 4.12 connectors) |
+| 0. Pre-Implementation Setup | 6 | 0 | ⏳ Not Started |
+| 1. Database Foundation | 6 | 0 | ⏳ Not Started |
+| 2. Authentication | 6 | 0 | ⏳ Not Started |
+| 3. Database Query Modules | 9 | 0 | ⏳ Not Started |
+| 4. API Routes | 11 | 0 | ⏳ Not Started |
 | 5. Integrations | 4 | 0 | ⏳ Not Started |
-| 6. Frontend Integration | 13 | 0 | ⏳ Not Started (added use-dashboard, use-connectors hooks) |
+| 6. Frontend Integration | 13 | 0 | ⏳ Not Started |
 | 7. Security Hardening | 5 | 0 | ⏳ Not Started |
-| 8. Deployment | 6 | 0 | ❌ Blocked (Azure infrastructure from Brandon) |
-| **Total** | **69** | **18** | **26% complete** |
-
-### Changes from original plan (April 24, 2026)
-- Added Step 3.10: `connectors.ts` query module (was missing — frontend page exists but no backend)
-- Added Step 3.11: `report-snapshots.ts` query module (placeholder existed but no step)
-- Added Step 4.12: `GET /api/connectors` endpoint (was missing)
-- Added `use-dashboard.ts` and `use-connectors.ts` to Step 6.3 hooks list
-- Updated Phase 2 strategy tag — clarified Azure AD blocker
-- Updated Step 8.5 — clarified Vercel vs Azure App Service deployment decision needed
-- Fixed progress table — was showing 0/66, now correctly shows 11/69
+| 8. Deployment | 6 | 0 | ⏳ Not Started |
+| **Total** | **66** | **0** | **⏳ Not Started** |
