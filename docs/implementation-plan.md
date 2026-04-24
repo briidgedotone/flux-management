@@ -505,16 +505,16 @@ export {};
 - [x] `getTaskById(taskId)` — For ownership checks in API layer.
 - [x] Tests: 13 tests in `src/__tests__/phase-3/projects.test.ts` — all pass.
 
-### Step 3.4: `team.ts`
+### Step 3.4: `team.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Team), BP §4 (Schema — `team_members` table + shared `users` table)
 > Security: SO §4 (co-ceo/director only for updates), SO §5 (audit log on updates)
 > Commit: `feat(db): add team query module with computed metrics`
 > Files: `src/lib/db/queries/team.ts`
 
-- [ ] `listTeamMembers()` — Join `users` + `team_members` + computed metrics → BP §5 (GET /api/team)
-- [ ] Computed metrics: tickets resolved (COUNT from `tickets` by `assigned_to_email`), active tasks (COUNT from `project_tasks`), avg resolution time → BP §5 (Team — Returns)
-- [ ] `getTeamMember(memberId)` — Detail with performance history → BP §5 (GET /api/team/:id)
-- [ ] `updateTeamMember(memberId, data)` — Update `team_members` row → BP §5 (PUT /api/team/:id)
+- [x] `listTeamMembers()` — Join `users` + `team_members` + computed metrics (tickets resolved, active tasks, avg resolution hours).
+- [x] `getTeamMember(userId)` — Detail with performance metrics and profile info.
+- [x] `updateTeamMember(userId, data)` — Dynamic field update for capacity, utilization, department, status, hire date.
+- [x] Tests: 5 tests in `src/__tests__/phase-3/team.test.ts` — all pass.
 
 ### Step 3.5: `reports.ts`
 > Ref: BP §5 (API Routes — Reports), BP §4 (Schema — `report_snapshots` for historical data, `client_profiles` for revenue)
