@@ -516,17 +516,17 @@ export {};
 - [x] `updateTeamMember(userId, data)` — Dynamic field update for capacity, utilization, department, status, hire date.
 - [x] Tests: 5 tests in `src/__tests__/phase-3/team.test.ts` — all pass.
 
-### Step 3.5: `reports.ts`
+### Step 3.5: `reports.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Reports), BP §4 (Schema — `report_snapshots` for historical data, `client_profiles` for revenue)
 > Security: SO §4 (co-ceo/director only for all reports)
-> **ALL report queries must include `WHERE o.is_active = true`** → BP §10, SO §11 Rule 7
 > Commit: `feat(db): add report query module with revenue, SLA, team, and ticket analytics`
 > Files: `src/lib/db/queries/reports.ts`
 
-- [ ] `getRevenueReport(range)` — Per-client revenue from `client_profiles`, total, growth → BP §5 (GET /api/reports/revenue). **Filter `is_active = true`**
-- [ ] `getTeamPerformanceReport(range)` — Per-member utilization from `team_members` + computed stats → BP §5 (GET /api/reports/team-performance)
-- [ ] `getSlaComplianceReport(range)` — Per-client SLA % from ticket resolution times vs `sla_target` → BP §5 (GET /api/reports/sla-compliance). **Filter `is_active = true`**
-- [ ] `getTicketAnalyticsReport(clientId, range)` — Resolution times, volume, priority distribution → BP §5 (GET /api/reports/ticket-analytics). **Filter `is_active = true` when no clientId**
+- [x] `getRevenueReport(range)` — Per-client revenue, totals. `is_active=true` enforced (R11).
+- [x] `getTeamPerformanceReport(range)` — Per-member tickets resolved, active tasks, avg resolution in range.
+- [x] `getSlaComplianceReport(range)` — Per-client SLA %, resolution times vs sla_target. `is_active=true` enforced (R11).
+- [x] `getTicketAnalyticsReport(clientId, range)` — Volume, priority breakdown, resolution times. `is_active=true` enforced (R11).
+- [x] Tests: 8 tests in `src/__tests__/phase-3/reports.test.ts` — all pass.
 
 ### Step 3.6: `ai.ts`
 > Ref: BP §5 (API Routes — AI Assistant), BP §7 (AI Assistant Architecture), BP §4 (Schema — shared `ai_conversations`, `ai_messages` tables)
