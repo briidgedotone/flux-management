@@ -13,7 +13,7 @@ import {
   CalendarBlankIcon,
   DotsThreeVerticalIcon,
 } from "@phosphor-icons/react";
-import { mockProjects } from "@/data/mock-projects";
+import { useProjects } from "@/hooks/use-projects";
 import type { Project, ProjectStatus } from "@/data/types";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -66,24 +66,26 @@ function pct(value: number, earliest: number, span: number) {
 /* ------------------------------------------------------------------ */
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const { data: rawData, isLoading, error } = useProjects();
+  const projects = (rawData as any)?.data as Project[] ?? [];
 
   /* KPI calculations */
-  const activeCount = mockProjects.filter(
+  const activeCount = projects.filter(
     (p) => p.status === "On Track" || p.status === "At Risk"
   ).length;
 
-  const totalCompleted = mockProjects.reduce(
+  const totalCompleted = projects.reduce(
     (sum, p) => sum + p.tasksCompleted,
     0
   );
-  const totalTasks = mockProjects.reduce((sum, p) => sum + p.totalTasks, 0);
+  const totalTasks = projects.reduce((sum, p) => sum + p.totalTasks, 0);
 
-  const onTrackCount = mockProjects.filter(
+  const onTrackCount = projects.filter(
     (p) => p.status === "On Track"
   ).length;
   const onTrackPct =
-    mockProjects.length > 0
-      ? Math.round((onTrackCount / mockProjects.length) * 100)
+    projects.length > 0
+      ? Math.round((onTrackCount / projects.length) * 100)
       : 0;
 
   /* View toggle buttons config */
@@ -149,9 +151,15 @@ export default function ProjectsPage() {
       </div>
 
       {/* ── View Body ── */}
-      {viewMode === "cards" && <CardsView projects={mockProjects} />}
-      {viewMode === "list" && <ListView projects={mockProjects} />}
-      {viewMode === "timeline" && <TimelineView projects={mockProjects} />}
+      {isLoading && (
+        <div className="text-center py-12 text-sm text-text-muted">Loading projects...</div>
+      )}
+      {error && (
+        <div className="text-center py-12 text-sm text-error">Failed to load projects.</div>
+      )}
+      {!isLoading && !error && viewMode === "cards" && <CardsView projects={projects} />}
+      {!isLoading && !error && viewMode === "list" && <ListView projects={projects} />}
+      {!isLoading && !error && viewMode === "timeline" && <TimelineView projects={projects} />}
     </div>
   );
 }
