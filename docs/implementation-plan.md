@@ -570,6 +570,15 @@ export {};
 - [x] `listActivityLog(filters)` — By entityType, entityId, userId, organizationId, action. Paginated, joins user name/email.
 - [x] Tests: 6 tests in `src/__tests__/phase-3/activity-log.test.ts` — all pass.
 
+### Step 3.10: `connectors.ts` ✅ DONE
+> Ref: BP §4 (Schema — shared `connector_statuses` table)
+> Commit: `feat(db): add connector status query module`
+> Files: `src/lib/db/queries/connectors.ts`
+
+- [x] `listConnectorStatuses()` — All statuses across active orgs with `is_active=true` (R11). Includes client name.
+- [x] `getConnectorStatus(connectorName)` — Filter by connector name across active orgs.
+- [x] Tests: 3 tests in `src/__tests__/phase-3/connectors.test.ts` — all pass.
+
 ---
 
 ## Phase 4 — API Routes
