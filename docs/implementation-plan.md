@@ -952,7 +952,7 @@ export {};
 |-------|-------|------|--------|
 | 0. Pre-Implementation Setup | 6 | 6 | ✅ Complete |
 | 1. Database Foundation | 6 | 6 | ✅ Complete |
-| 2. Authentication | 6 | 6 | ✅ Complete (code done, Azure AD app registration pending from Brandon) |
+| 2. Authentication | 6 | 6 | ✅ Complete (Azure AD SSO working) |
 | 3. Database Query Modules | 11 | 11 | ✅ Complete (12 query modules, 111 tests, all pass) |
 | 4. API Routes | 12 | 12 | ✅ Complete (30+ endpoints, all with auth middleware + Zod validation) |
 | 5. Integrations | 4 | 4 | ✅ Complete (Planner write-back, Claude AI, email sender, webhook) |
@@ -974,14 +974,16 @@ export {};
 - **Step 6.13:** Remove mock data files after all pages verified
 - **Phase 7:** Security hardening tests (rate limiting, role access, input validation, audit logging, `is_active` filter)
 
-### What's Blocked on Brandon
-- **Azure AD app registration** (`flux-management-dev`) — need CLIENT_ID, CLIENT_SECRET, redirect URI configured
-- **`Tasks.ReadWrite.All` admin consent** — needed for Planner task write-back
-- **`Group.Read.All`** — needed for M365 Group ID lookups
-- **Production DATABASE_URL** — management portal connection to shared Azure PostgreSQL
-- **Migrations 005-006 on production** — 7 new management tables need to be applied
+### What's Done (from Brandon)
+- **Azure AD app registration** (`flux-management-dev`) — created, admin consent granted (April 25, 2026)
+- **API permissions granted:** `User.Read`, `Tasks.ReadWrite.All`, `Sites.Read.All`, `Mail.Send`, `Group.Read.All`
+- **Azure AD SSO login** — tested and working on localhost:3001
+
+### What's Still Pending from Brandon
 - **User role confirmation** — Brandon/Zack as `co-ceo`, Cameron as `employee`
 - **M365 Group IDs** — which Planner plans map to which client orgs
 - **Production email sender** — dedicated address for management notifications
+- **Production DATABASE_URL** — management portal connection to shared Azure PostgreSQL
+- **Migrations 005-006 on production** — 7 new management tables need to be applied
 - **Deployment platform decision** — Vercel (like client portal) vs Azure App Service
 - **Production domain** — DNS for management portal (e.g., `management.fluxtech.com`)
