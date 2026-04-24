@@ -629,15 +629,15 @@ export {};
 - [x] `PUT /api/clients/:id` — Update. `withRole(['co-ceo', 'director'])`. Audit log (R29).
 - [x] `GET /api/clients/:id/stats` — Client KPIs with range. `withManagementAuth`.
 
-### Step 4.4: Ticket endpoints
+### Step 4.4: Ticket endpoints ✅ DONE
 > Ref: BP §5 (API Routes — Tickets), SO §9 (parameterized SQL for filters)
 > Commit: `feat(api): add ticket list, detail, stats, and internal notes endpoints`
 > Files: `src/app/api/tickets/route.ts`, `src/app/api/tickets/[id]/route.ts`, `src/app/api/tickets/[id]/notes/route.ts`, `src/app/api/tickets/stats/route.ts`
 
-- [ ] `GET /api/tickets` — List with filters + pagination → BP §5 (Tickets — Filters)
-- [ ] `GET /api/tickets/:id` — Detail with internal notes → BP §5 (Tickets — Returns)
-- [ ] `POST /api/tickets/:id/notes` — Add internal note → BP §5 (co-ceo, director, employee), SO §5 (audit log)
-- [ ] `GET /api/tickets/stats` — Cross-client metrics → BP §5 (Tickets — Returns, Filters)
+- [x] `GET /api/tickets` — List with filters + pagination. Zod validation. `withManagementAuth`.
+- [x] `GET /api/tickets/:id` — Detail with activities, attachments, internal notes. `withManagementAuth`.
+- [x] `POST /api/tickets/:id/notes` — Add internal note. `withManagementAuth`. Audit log (R29).
+- [x] `GET /api/tickets/stats` — Cross-client metrics with range/clientId. `withManagementAuth`.
 
 ### Step 4.5: Project endpoints
 > Ref: BP §5 (API Routes — Projects), BP §6 (Integration — Task Write-Back), EA §Microsoft Graph API (Planner write rules)
