@@ -755,14 +755,12 @@ export {};
 
 ## Phase 6 — Frontend Integration
 
-### Step 6.1: Frontend API client
-> Ref: BP §11 (Folder Structure — `lib/api/client.ts`), BP §12 (Files That Can Be Adapted: identical pattern)
+### Step 6.1: Frontend API client ✅ DONE
 > Commit: `feat(ui): add frontend API client with auth cookie support`
 > Files: `src/lib/api/client.ts`
-> Phase Strategy: Can build now — pure frontend code
 
-- [ ] Create `src/lib/api/client.ts` — Fetch wrapper with `credentials: 'include'`
-- [ ] Auto-redirect to `/login` on 401 responses
+- [x] Fetch wrapper with `credentials: 'include'`, auto-redirect on 401, typed `ApiClientError`.
+- [x] `api.get`, `api.post`, `api.put`, `api.delete` with query param builder.
 
 ### Step 6.2: React Query setup
 > Ref: BP §11 (Folder Structure — `lib/api/query-client.ts`), BP §12 (Files That Can Be Adapted: identical pattern, new query keys)
