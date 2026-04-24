@@ -762,14 +762,13 @@ export {};
 - [x] Fetch wrapper with `credentials: 'include'`, auto-redirect on 401, typed `ApiClientError`.
 - [x] `api.get`, `api.post`, `api.put`, `api.delete` with query param builder.
 
-### Step 6.2: React Query setup
-> Ref: BP §11 (Folder Structure — `lib/api/query-client.ts`), BP §12 (Files That Can Be Adapted: identical pattern, new query keys)
+### Step 6.2: React Query setup ✅ DONE
 > Commit: `feat(ui): configure React Query with query key factory`
-> Files: `src/lib/api/query-client.ts`, `src/app/layout.tsx`
+> Files: `src/lib/api/query-client.ts`, `src/components/providers/query-provider.tsx`, `src/app/layout.tsx`
 
-- [ ] Create `src/lib/api/query-client.ts` — React Query config (60s stale time, retry 1)
-- [ ] Add `QueryClientProvider` to root layout
-- [ ] Create query key factory for all domains
+- [x] `query-client.ts` — React Query config (60s stale, retry 1) + key factory for all 10 domains.
+- [x] `QueryProvider` client component wrapping root layout.
+- [x] `QueryClientProvider` added to `layout.tsx`.
 
 ### Step 6.3: React Query hooks
 > Ref: BP §11 (Folder Structure — hooks directory), BP §5 (API Routes — all endpoints define what hooks fetch)
