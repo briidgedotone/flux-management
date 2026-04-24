@@ -579,6 +579,16 @@ export {};
 - [x] `getConnectorStatus(connectorName)` — Filter by connector name across active orgs.
 - [x] Tests: 3 tests in `src/__tests__/phase-3/connectors.test.ts` — all pass.
 
+### Step 3.11: `report-snapshots.ts` ✅ DONE
+> Ref: BP §4 (Schema — `report_snapshots` table)
+> Commit: `feat(db): add report snapshot query module for historical data`
+> Files: `src/lib/db/queries/report-snapshots.ts`
+
+- [x] `createSnapshot(reportType, period, periodDate, data)` — Idempotent via ON CONFLICT upsert.
+- [x] `listSnapshots(reportType, filters)` — By type and optional period, ordered by date DESC.
+- [x] `getLatestSnapshot(reportType, period)` — Most recent snapshot for cache/fallback.
+- [x] Tests: 6 tests in `src/__tests__/phase-3/report-snapshots.test.ts` — all pass.
+
 ---
 
 ## Phase 4 — API Routes
@@ -1023,13 +1033,13 @@ export {};
 
 | Phase | Steps | Done | Status |
 |-------|-------|------|--------|
-| 0. Pre-Implementation Setup | 6 | 0 | ⏳ Not Started |
-| 1. Database Foundation | 6 | 0 | ⏳ Not Started |
-| 2. Authentication | 6 | 0 | ⏳ Not Started |
-| 3. Database Query Modules | 9 | 0 | ⏳ Not Started |
-| 4. API Routes | 11 | 0 | ⏳ Not Started |
+| 0. Pre-Implementation Setup | 6 | 6 | ✅ Complete |
+| 1. Database Foundation | 6 | 6 | ✅ Complete |
+| 2. Authentication | 6 | 6 | ✅ Complete (code done, Azure AD testing pending) |
+| 3. Database Query Modules | 11 | 11 | ✅ Complete (111 tests, all pass) |
+| 4. API Routes | 12 | 0 | ⏳ Not Started |
 | 5. Integrations | 4 | 0 | ⏳ Not Started |
 | 6. Frontend Integration | 13 | 0 | ⏳ Not Started |
 | 7. Security Hardening | 5 | 0 | ⏳ Not Started |
-| 8. Deployment | 6 | 0 | ⏳ Not Started |
-| **Total** | **66** | **0** | **⏳ Not Started** |
+| 8. Deployment | 6 | 0 | ❌ Blocked (Azure infrastructure) |
+| **Total** | **69** | **29** | **42% complete** |
