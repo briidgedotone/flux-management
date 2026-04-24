@@ -818,15 +818,12 @@ export {};
   - Contact webhook: 10/min per API key (via `withWebhookAuth`)
 - [x] Verified: all 30+ protected routes go through `withManagementAuth` or `withRole` (which calls it)
 
-### Step 7.2: Error boundary and error pages
-> Ref: SO §9 (API Security — Error Responses: "generic messages only"), SO §1 (Security Inheritance — "never expose table names, stack traces")
+### Step 7.2: Error boundary and error pages ✅ DONE
 > Commit: `feat(ui): add error boundary, 404 page, and generic error handling`
 > Files: `src/app/not-found.tsx`, `src/app/error.tsx`
 
-- [ ] Add error boundary component
-- [ ] Create custom 404 page
-- [ ] Create custom error page
-- [ ] Verify generic error messages (no internals exposed) → SO §9 (Error Response examples: GOOD vs BAD)
+- [x] `not-found.tsx` — 404 page with link to dashboard. Generic message, no internals.
+- [x] `error.tsx` — Error boundary with retry button. Generic message, no internals (R18).
 
 ### Step 7.3: Audit logging integration
 > Ref: SO §5 (Audit Logging — What Gets Logged, What Does NOT Get Logged, Retention)
