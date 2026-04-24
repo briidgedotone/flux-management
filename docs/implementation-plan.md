@@ -477,16 +477,18 @@ export {};
 - [x] `getClientStats(clientId, range)` — Ticket trends, resolution time, project progress over 7d/30d/90d.
 - [x] Tests: 12 tests in `src/__tests__/phase-3/clients.test.ts` — all pass, R56 verified (two consecutive runs).
 
-### Step 3.2: `tickets.ts`
+### Step 3.2: `tickets.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Tickets), BP §4 (Schema — shared `tickets`, `ticket_activities`, `ticket_attachments` tables + new `internal_notes`)
 > Security: SO §9 (parameterized SQL, no `SELECT *`), SO §5 (audit log on note creation)
 > Commit: `feat(db): add ticket query module with cross-org list and internal notes`
 > Files: `src/lib/db/queries/tickets.ts`
 
-- [ ] `listTickets(filters)` — Cross-org with pagination, status/priority/client/assignee filters → BP §5 (GET /api/tickets)
-- [ ] `getTicket(ticketId)` — Detail with activity, attachments, internal notes (join `internal_notes`) → BP §5 (GET /api/tickets/:id)
-- [ ] `getTicketStats(filters)` — Cross-client metrics (volume, resolution time, trends) → BP §5 (GET /api/tickets/stats). **Must include `WHERE o.is_active = true`** → BP §10, SO §11 Rule 7
-- [ ] `getTicketChartData(clientId, range)` — Chart-ready aggregation
+- [x] `listTickets(filters)` — Cross-org with pagination, status/priority/client/assignee/search filters. `WHERE o.is_active = true` enforced (R11). Returns `clientId`/`clientName` per ticket.
+- [x] `getTicket(ticketId)` — Detail with activities, attachments, and internal notes (management-only). No `is_active` filter (R13).
+- [x] `getTicketStats(filters)` — Cross-client metrics: open/pending/closed/critical counts, avg resolution. `is_active` filter enforced (R11). Supports `clientId` and `range`.
+- [x] `getTicketChartData(clientId, range)` — Daily created/resolved counts via `generate_series`.
+- [x] `addInternalNote(ticketId, authorId, content)` — Insert into `internal_notes` table.
+- [x] Tests: 12 tests in `src/__tests__/phase-3/tickets.test.ts` — all pass.
 
 ### Step 3.3: `projects.ts`
 > Ref: BP §5 (API Routes — Projects), BP §4 (Schema — shared `projects`, `project_tasks` tables), BP §6 (Integration — Task Write-Back)
