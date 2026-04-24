@@ -661,15 +661,15 @@ export {};
 - [x] `GET /api/team/:id` — Detail. `withManagementAuth`.
 - [x] `PUT /api/team/:id` — Update. `withRole(['co-ceo', 'director'])`. Audit log (R29).
 
-### Step 4.7: Report endpoints
-> Ref: BP §5 (API Routes — Reports), SO §4 (co-ceo/director only for all reports), SO §4 (Employee Restrictions: "cannot view reports")
+### Step 4.7: Report endpoints ✅ DONE
+> Ref: BP §5 (API Routes — Reports), SO §4 (co-ceo/director only for all reports)
 > Commit: `feat(api): add revenue, team performance, SLA, and ticket analytics report endpoints`
 > Files: `src/app/api/reports/revenue/route.ts`, `src/app/api/reports/team-performance/route.ts`, `src/app/api/reports/sla-compliance/route.ts`, `src/app/api/reports/ticket-analytics/route.ts`
 
-- [ ] `GET /api/reports/revenue` — Revenue report → BP §5 (Reports — Returns, Filters), `withRole(['co-ceo', 'director'])`
-- [ ] `GET /api/reports/team-performance` — Team report → BP §5 (Reports), `withRole(['co-ceo', 'director'])`
-- [ ] `GET /api/reports/sla-compliance` — SLA report → BP §5 (Reports), `withRole(['co-ceo', 'director'])`
-- [ ] `GET /api/reports/ticket-analytics` — Ticket report → BP §5 (Reports), `withRole(['co-ceo', 'director'])`
+- [x] `GET /api/reports/revenue` — `withRole(['co-ceo', 'director'])`. Range filter.
+- [x] `GET /api/reports/team-performance` — `withRole(['co-ceo', 'director'])`. Range filter.
+- [x] `GET /api/reports/sla-compliance` — `withRole(['co-ceo', 'director'])`. Range filter.
+- [x] `GET /api/reports/ticket-analytics` — `withRole(['co-ceo', 'director'])`. clientId + range filters.
 
 ### Step 4.8: AI endpoints
 > Ref: BP §5 (API Routes — AI Assistant), BP §7 (AI Assistant Architecture — System Prompt, Context Builder), EA §Claude API (Safety Rules)
