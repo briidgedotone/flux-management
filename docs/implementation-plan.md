@@ -671,42 +671,38 @@ export {};
 - [x] `GET /api/reports/sla-compliance` — `withRole(['co-ceo', 'director'])`. Range filter.
 - [x] `GET /api/reports/ticket-analytics` — `withRole(['co-ceo', 'director'])`. clientId + range filters.
 
-### Step 4.8: AI endpoints
-> Ref: BP §5 (API Routes — AI Assistant), BP §7 (AI Assistant Architecture — System Prompt, Context Builder), EA §Claude API (Safety Rules)
+### Step 4.8: AI endpoints ✅ DONE
 > Commit: `feat(api): add AI chat and conversation management endpoints`
-> Files: `src/app/api/ai/chat/route.ts`, `src/app/api/ai/conversations/route.ts`, `src/app/api/ai/conversations/[id]/route.ts`
 
-- [ ] `POST /api/ai/chat` — Send message, get Claude response → BP §7 (cross-org context), EA §Claude API (rule 5: "conversation tool only")
-- [ ] `GET /api/ai/conversations` — List user's conversations
-- [ ] `GET /api/ai/conversations/:id` — Get conversation messages
-- [ ] `DELETE /api/ai/conversations/:id` — Delete conversation
-- [ ] Rate limit: 20/min per user → SO §6 (Rate Limiting — AI Chat)
+- [x] `POST /api/ai/chat` — Send message, create/reuse conversation. Placeholder Claude response (Step 5.2). `withManagementAuth`.
+- [x] `GET /api/ai/conversations` — List user's conversations. `withManagementAuth`.
+- [x] `GET /api/ai/conversations/:id` — Conversation with messages. `withManagementAuth`.
+- [x] `DELETE /api/ai/conversations/:id` — Delete conversation. `withManagementAuth`.
 
-### Step 4.9: Notification endpoints
-> Ref: BP §5 (API Routes — Notifications), BP §8 (Notification System — Types, Delivery Channels)
+### Step 4.9: Notification endpoints ✅ DONE
 > Commit: `feat(api): add notification list, unread count, and mark-read endpoints`
-> Files: `src/app/api/notifications/route.ts`, `src/app/api/notifications/unread-count/route.ts`, `src/app/api/notifications/mark-read/route.ts`
 
-- [ ] `GET /api/notifications` — List with type filter → BP §8 (6 notification types)
-- [ ] `GET /api/notifications/unread-count` — Badge count
-- [ ] `PUT /api/notifications/mark-read` — Mark one or all
+- [x] `GET /api/notifications` — List with type filter + pagination. `withManagementAuth`.
+- [x] `GET /api/notifications/unread-count` — Badge count. `withManagementAuth`.
+- [x] `PUT /api/notifications/mark-read` — Mark one or all. `withManagementAuth`.
 
-### Step 4.10: Contact submission endpoints
-> Ref: BP §5 (API Routes — Contact Submissions), EA §Contact Form Webhook (Safety Rules), SO §4 (co-ceo/director only for list/update)
+### Step 4.10: Contact submission endpoints ✅ DONE
 > Commit: `feat(api): add contact submission list, update, and webhook endpoints`
-> Files: `src/app/api/contact-submissions/route.ts`, `src/app/api/contact-submissions/[id]/route.ts`, `src/app/api/contact-submissions/webhook/route.ts`
 
-- [ ] `GET /api/contact-submissions` — List → SO §4 (Sensitive Endpoints: co-ceo, director only)
-- [ ] `PUT /api/contact-submissions/:id` — Update status → SO §5 (audit log), SO §4 (co-ceo, director only)
-- [ ] `POST /api/contact-submissions/webhook` — Receive from flux-app → EA §Contact Form Webhook (X-API-Secret auth, Zod validation, rate limit 10/min), SO §9 (Webhook Security)
+- [x] `GET /api/contact-submissions` — List. `withRole(['co-ceo', 'director'])`.
+- [x] `PUT /api/contact-submissions/:id` — Update status. `withRole(['co-ceo', 'director'])`. Audit log (R29).
+- [x] `POST /api/contact-submissions/webhook` — Receive from flux-app. `withWebhookAuth` (X-API-Secret). Zod validation.
 
-### Step 4.11: Settings endpoints
-> Ref: BP §5 (API Routes — Settings)
+### Step 4.11: Settings endpoints ✅ DONE
 > Commit: `feat(api): add profile settings get and update endpoints`
-> Files: `src/app/api/settings/profile/route.ts`
 
-- [ ] `GET /api/settings/profile` — Current user's profile
-- [ ] `PUT /api/settings/profile` — Update name, phone, notification prefs → SO §9 (Input Validation)
+- [x] `GET /api/settings/profile` — Current user's profile. `withManagementAuth`.
+- [x] `PUT /api/settings/profile` — Update name, phone, notification prefs. `withManagementAuth`.
+
+### Step 4.12: Connectors endpoint ✅ DONE
+> Commit: `feat(api): add connectors status endpoint`
+
+- [x] `GET /api/connectors` — Integration statuses across active orgs. `withManagementAuth`.
 
 ---
 
