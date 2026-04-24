@@ -386,17 +386,17 @@ export {};
 
 ## Phase 2 — Authentication
 
-### Step 2.1: Azure AD configuration helper
+### Step 2.1: Azure AD configuration helper ✅ DONE
 > Ref: BP §3 (Auth — Azure AD Setup, Auth Flow steps 1-4), SO §3 (Authentication Security — Separate App Registration)
 > Commit: `feat(auth): add Azure AD OAuth2 configuration and helpers`
 > Files: `src/lib/auth/azure-ad.ts`
-> Phase Strategy: Can build now — we have Azure AD admin access to create app registration
+> Phase Strategy: Code written using client portal as reference. Testing requires Azure AD app registration from Brandon.
 
-- [ ] Create `src/lib/auth/azure-ad.ts`
-- [ ] Configure for management app registration (`flux-management-portal`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
-- [ ] OAuth2 authorization URL builder with PKCE → BP §3 (Auth Flow step 1-2)
-- [ ] Token exchange function → BP §3 (Auth Flow step 4)
-- [ ] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
+- [x] Create `src/lib/auth/azure-ad.ts`
+- [x] Configure for management app registration (`flux-management-portal`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
+- [x] OAuth2 authorization URL builder with PKCE → BP §3 (Auth Flow step 1-2)
+- [x] Token exchange function → BP §3 (Auth Flow step 4)
+- [x] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
 
 ### Step 2.2: JWT session management
 > Ref: BP §3 (Auth — JWT Payload, Cookie Configuration), SO §3 (Cookie Isolation)
