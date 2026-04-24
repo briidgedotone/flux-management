@@ -79,7 +79,7 @@ New for Management Portal:
 |----------|------|---------|
 | App Service #2 | Azure App Service (B1) | Management Portal hosting |
 | PostgreSQL | Azure PostgreSQL Flexible Server | **Shared** — same instance as client portal |
-| Azure AD App | App Registration | `flux-management-portal` (separate from client portal) |
+| Azure AD App | App Registration | `flux-management-dev` (separate from client portal) |
 | Key Vault | Azure Key Vault | **Shared** — same vault, management-specific secrets added |
 | Azure Functions | Azure Functions App | **Shared** — existing sync jobs + 1 new nightly snapshot job |
 
@@ -125,7 +125,7 @@ AZURE_KEY_VAULT_URL=<same-vault>
 
 ### Azure AD Setup
 
-- **New app registration:** `flux-management-portal`
+- **New app registration:** `flux-management-dev`
 - **Same Azure AD tenant** as client portal
 - **Redirect URI:** `https://management.fluxtech.com/api/auth/callback`
 - **API Permissions (Application):**
@@ -1175,7 +1175,7 @@ src/
 |--------|---------------|-------------------|
 | **Audience** | External clients (2 → 15+) | Internal Flux team (5 employees) |
 | **Data Access** | Single org only (org-scoped) | All orgs (cross-org) |
-| **Azure AD App** | `flux-clientportal-dev` | `flux-management-portal` (new) |
+| **Azure AD App** | `flux-clientportal-dev` | `flux-management-dev` (new) |
 | **JWT Cookie** | `flux-session` | `flux-management-session` |
 | **JWT Payload** | Includes `organizationId` | No `organizationId` |
 | **User Roles** | `client` | `co-ceo`, `director`, `employee` |

@@ -393,7 +393,7 @@ export {};
 > Phase Strategy: Code written using client portal as reference. Testing requires Azure AD app registration from Brandon.
 
 - [x] Create `src/lib/auth/azure-ad.ts`
-- [x] Configure for management app registration (`flux-management-portal`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
+- [x] Configure for management app registration (`flux-management-dev`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
 - [x] OAuth2 authorization URL builder with PKCE → BP §3 (Auth Flow step 1-2)
 - [x] Token exchange function → BP §3 (Auth Flow step 4)
 - [x] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
@@ -928,7 +928,7 @@ export {};
 > Files: Azure portal configuration, `.env.local` (update client ID)
 > Phase Strategy: **Blocked** — needs admin consent for `Tasks.ReadWrite.All` from Brandon
 
-- [ ] Register `flux-management-portal` in Azure AD → BP §3 (Azure AD Setup)
+- [ ] Register `flux-management-dev` in Azure AD → BP §3 (Azure AD Setup)
 - [ ] Configure redirect URIs → BP §3 (Redirect URI)
 - [ ] Request admin consent for API permissions → BP §3 (API Permissions list: User.Read, Tasks.ReadWrite.All, Sites.Read.All, Mail.Send, Group.Read.All)
 - [ ] Verify `Tasks.ReadWrite.All` is granted → EA §Microsoft Graph API (Planner write requires this)
