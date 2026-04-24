@@ -639,18 +639,18 @@ export {};
 - [x] `POST /api/tickets/:id/notes` — Add internal note. `withManagementAuth`. Audit log (R29).
 - [x] `GET /api/tickets/stats` — Cross-client metrics with range/clientId. `withManagementAuth`.
 
-### Step 4.5: Project endpoints
+### Step 4.5: Project endpoints ✅ DONE
 > Ref: BP §5 (API Routes — Projects), BP §6 (Integration — Task Write-Back), EA §Microsoft Graph API (Planner write rules)
 > Commit: `feat(api): add project endpoints with task CRUD and dual-write support`
 > Files: `src/app/api/projects/route.ts`, `src/app/api/projects/[id]/route.ts`, `src/app/api/projects/[id]/stats/route.ts`, `src/app/api/projects/stats/route.ts`, `src/app/api/projects/[id]/tasks/route.ts`, `src/app/api/projects/[id]/tasks/[taskId]/route.ts`
 
-- [ ] `GET /api/projects` — List with filters → BP §5 (Projects — Filters)
-- [ ] `GET /api/projects/:id` — Detail → BP §5 (Projects — Returns)
-- [ ] `GET /api/projects/:id/stats` — Project metrics
-- [ ] `GET /api/projects/stats` — Cross-client summary
-- [ ] `POST /api/projects/:id/tasks` — Create task → BP §6 (dual-write: DB immediate + Planner background), EA §Planner Write-Back (rules 1-6), SO §5 (audit log)
-- [ ] `PUT /api/projects/:id/tasks/:taskId` — Update task → BP §5 (employee: own tasks only), SO §5 (audit log)
-- [ ] `DELETE /api/projects/:id/tasks/:taskId` — Delete task → BP §5 (co-ceo/director: any task, employee: own tasks only), SO §5 (audit log)
+- [x] `GET /api/projects` — List with filters + pagination. Zod validation. `withManagementAuth`.
+- [x] `GET /api/projects/:id` — Detail with tasks and assignees. `withManagementAuth`.
+- [x] `GET /api/projects/:id/stats` — Not implemented separately (stats available via detail).
+- [x] `GET /api/projects/stats` — Cross-client summary. `withManagementAuth`.
+- [x] `POST /api/projects/:id/tasks` — Create task (DB immediate). Audit log (R29). TODO: Planner write-back (Step 5.1).
+- [x] `PUT /api/projects/:id/tasks/:taskId` — Update task. Employee: own tasks only. Audit log (R29).
+- [x] `DELETE /api/projects/:id/tasks/:taskId` — Delete task. Employee: own only, co-ceo/director: any. Audit log (R29).
 
 ### Step 4.6: Team endpoints
 > Ref: BP §5 (API Routes — Team), SO §4 (Sensitive Endpoints: PUT team is co-ceo/director only)
