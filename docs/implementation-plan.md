@@ -464,17 +464,18 @@ export {};
 
 ## Phase 3 — Database Query Modules
 
-### Step 3.1: `clients.ts`
+### Step 3.1: `clients.ts` ✅ DONE
 > Ref: BP §5 (API Routes — Clients), BP §4 (Schema — `client_profiles` table, `organizations` table)
 > Security: SO §9 (parameterized SQL, no `SELECT *`), SO §5 (audit log on updates)
 > Commit: `feat(db): add client query module with cross-org list and is_active filter`
 > Files: `src/lib/db/queries/clients.ts`
 > Phase Strategy: Can build now — pure PostgreSQL, no external APIs
 
-- [ ] `listClients(filters)` — Join `organizations` + `client_profiles` + ticket/project counts + SLA % → BP §5 (GET /api/clients). **Must include `WHERE o.is_active = true`** → BP §10 (is_active Filter Rule), SO §11 Rule 7
-- [ ] `getClient(clientId)` — Full client detail with recent tickets, active projects → BP §5 (GET /api/clients/:id)
-- [ ] `updateClientProfile(clientId, data)` — Update `client_profiles` row → BP §5 (PUT /api/clients/:id), SO §5 (audit log required)
-- [ ] `getClientStats(clientId, range)` — Ticket trends, project progress, SLA over time → BP §5 (GET /api/clients/:id/stats)
+- [x] `listClients(filters)` — Join `organizations` + `client_profiles` + ticket/project counts + SLA %. **`WHERE o.is_active = true`** enforced (R11). Supports search, industry, healthScore, contractStatus, pagination, sorting.
+- [x] `getClient(clientId)` — Full client detail by org ID. No `is_active` filter on single lookup (R13).
+- [x] `updateClientProfile(clientId, data)` — Dynamic field update with parameterized SQL (R15). Returns updated row.
+- [x] `getClientStats(clientId, range)` — Ticket trends, resolution time, project progress over 7d/30d/90d.
+- [x] Tests: 12 tests in `src/__tests__/phase-3/clients.test.ts` — all pass, R56 verified (two consecutive runs).
 
 ### Step 3.2: `tickets.ts`
 > Ref: BP §5 (API Routes — Tickets), BP §4 (Schema — shared `tickets`, `ticket_activities`, `ticket_attachments` tables + new `internal_notes`)
