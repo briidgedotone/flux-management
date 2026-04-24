@@ -784,8 +784,8 @@ export {};
 > Commit: `feat(ui): wire dashboard page to real API data`
 > Files: `src/app/(portal)/dashboard/page.tsx`
 
-- [ ] Replace mock data with `useDashboard()` hook → BP §5 (Dashboard — Response includes)
-- [ ] Handle loading/error states
+- [x] Replaced mock imports with `useDashboard()`, `useTickets()`, `useProjects()`, `useAuth()`.
+- [x] KPI panels, recent tickets table, active projects carousel use real API data.
 
 ### Step 6.5: Wire clients page + client detail
 > Ref: BP §5 (API Routes — Clients)

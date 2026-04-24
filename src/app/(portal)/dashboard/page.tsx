@@ -17,15 +17,14 @@ import {
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
 import { TicketSlideOver } from "@/components/shared/ticket-slide-over";
-import { mockTickets } from "@/data/mock-tickets";
-import { mockProjects } from "@/data/mock-projects";
-import { ticketActivity7Days, ticketActivity30Days, ticketActivity90Days } from "@/data/mock-chart-data";
-import { mockClients } from "@/data/mock-clients";
-import { mockTeamMembers } from "@/data/mock-team";
+import { useDashboard } from "@/hooks/use-dashboard";
+import { useTickets } from "@/hooks/use-tickets";
+import { useProjects } from "@/hooks/use-projects";
+import { useAuth } from "@/hooks/use-auth";
 import type { Ticket } from "@/data/types";
 import { cn } from "@/lib/utils";
 
-/* Sparkline data (last 7 data points for inline micro-charts) */
+/* Sparkline data — static placeholders until chart endpoint is wired */
 const revenueSparkline = [
   { v: 98 }, { v: 105 }, { v: 95 }, { v: 112 }, { v: 118 }, { v: 115 }, { v: 118.5 },
 ];
@@ -37,11 +36,6 @@ const slaSparkline = [
 ];
 
 type ChartRange = "7d" | "30d" | "90d";
-const chartDataMap: Record<ChartRange, typeof ticketActivity7Days> = {
-  "7d": ticketActivity7Days,
-  "30d": ticketActivity30Days,
-  "90d": ticketActivity90Days,
-};
 const chartLabels: Record<ChartRange, string> = { "7d": "7 Days", "30d": "30 Days", "90d": "90 Days" };
 
 const statusDotColor: Record<string, string> = {
@@ -49,12 +43,6 @@ const statusDotColor: Record<string, string> = {
   "At Risk": "bg-warning",
   Delayed: "bg-error",
 };
-
-const projectStatusData = [
-  { name: "On Track", value: 3, color: "#0D7C5F" },
-  { name: "At Risk", value: 1, color: "#B8860B" },
-  { name: "Delayed", value: 1, color: "#C53030" },
-];
 
 const todayFormatted = new Date().toLocaleDateString("en-US", {
   weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -66,13 +54,24 @@ export default function DashboardPage() {
   const [chartRange, setChartRange] = useState<ChartRange>("7d");
   const [syncing, setSyncing] = useState(false);
 
+  const { data: auth } = useAuth();
+  const { data: dashboard, isLoading } = useDashboard();
+  const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc" });
+  const { data: projectsData } = useProjects({ limit: 10, sort: "created_at", order: "desc" });
+
   const handleSync = () => {
     setSyncing(true);
     setTimeout(() => setSyncing(false), 500);
   };
 
-  const openTickets = mockTickets.filter((t) => t.status === "Open");
-  const recentTickets = mockTickets.slice(0, 5);
+  const d = dashboard;
+  const recentTickets = (ticketsData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+  const activeProjects = (projectsData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+  const projectStatusData = d ? [
+    { name: "On Track", value: d.projects.onTrack, color: "#0D7C5F" },
+    { name: "At Risk", value: d.projects.atRisk, color: "#B8860B" },
+    { name: "Delayed", value: d.projects.delayed, color: "#C53030" },
+  ] : [];
 
   return (
     <div className="space-y-8">
@@ -80,7 +79,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-9 tracking-[-0.02em] text-text-primary">
-            Good morning, Alex
+            Good morning{auth?.name ? `, ${auth.name.split(" ")[0]}` : ""}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">
             Here&apos;s your management overview
@@ -119,15 +118,14 @@ export default function DashboardPage() {
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/clients")}
-          aria-label={`Revenue $118.5K, up 8%. ${mockClients.filter(c => c.contractStatus === "active").length} active clients, ${mockClients.filter(c => c.contractStatus === "expiring").length} expiring. Click to view clients.`}
+          aria-label={`Revenue $${d ? (d.revenue.totalMonthly / 1000).toFixed(1) : "—"}K. ${d?.revenue.clientCount ?? 0} clients. Click to view clients.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  $118.5K
+                  ${d ? (d.revenue.totalMonthly / 1000).toFixed(1) : "—"}K
                 </span>
-                <TrendBadge value="8%" direction="up" sentiment="positive" />
               </div>
               <span className="text-[11px] text-text-muted">Monthly Revenue</span>
             </div>
@@ -147,14 +145,8 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <BuildingsIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">{mockClients.filter(c => c.contractStatus === "active").length}</span>
+            <span className="font-semibold text-text-primary">{d?.revenue.clientCount ?? 0}</span>
             <span className="text-text-muted">active clients</span>
-            {mockClients.filter(c => c.contractStatus === "expiring").length > 0 && (
-              <>
-                <span className="text-text-muted" aria-hidden="true">&middot;</span>
-                <span className="text-warning font-medium">{mockClients.filter(c => c.contractStatus === "expiring").length} expiring</span>
-              </>
-            )}
           </div>
         </button>
 
@@ -163,19 +155,18 @@ export default function DashboardPage() {
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/tickets")}
-          aria-label={`${openTickets.length} open tickets, up 3. ${mockTickets.filter(t => t.priority === "Critical").length} critical, ${mockTickets.filter(t => t.status === "Pending").length} pending. SLA 96.2%, up 1.1%. Click to view tickets.`}
+          aria-label={`${d?.tickets.open ?? 0} open tickets. ${d?.tickets.critical ?? 0} critical, ${d?.tickets.pending ?? 0} pending. Click to view tickets.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  {openTickets.length}
+                  {d?.tickets.open ?? "—"}
                 </span>
                 <span className="text-[12px] text-text-muted">open tickets</span>
-                <TrendBadge value="3" direction="up" sentiment="negative" />
               </div>
               <span className="text-[11px] text-text-muted">
-                {mockTickets.filter(t => t.priority === "Critical").length} critical, {mockTickets.filter(t => t.status === "Pending").length} pending
+                {d?.tickets.critical ?? 0} critical, {d?.tickets.pending ?? 0} pending
               </span>
             </div>
             <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
@@ -194,15 +185,8 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <ShieldCheckIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">96.2%</span>
-            <span className="text-text-muted">SLA</span>
-            <TrendBadge value="1.1%" direction="up" sentiment="positive" />
-            {mockClients.filter(c => c.slaCompliance < 90).length > 0 && (
-              <>
-                <span aria-hidden="true">&middot;</span>
-                <span className="text-warning font-medium">{mockClients.filter(c => c.slaCompliance < 90).length} below target</span>
-              </>
-            )}
+            <span className="font-semibold text-text-primary">{d ? `${Math.round(d.tickets.avgResolutionHours)}h avg` : "—"}</span>
+            <span className="text-text-muted">resolution</span>
           </div>
         </button>
 
@@ -211,19 +195,19 @@ export default function DashboardPage() {
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/projects")}
-          aria-label={`${mockProjects.filter((p) => p.progress < 100).length} active projects. ${mockProjects.filter(p => p.status === "At Risk").length} at risk, ${mockProjects.filter(p => p.status === "Delayed").length} delayed. ${mockTeamMembers.filter(m => m.status === "active").length} team members, ${Math.round(mockTeamMembers.filter(m => m.status === "active").reduce((s, m) => s + m.utilization, 0) / mockTeamMembers.filter(m => m.status === "active").length)}% utilized. Click to view projects.`}
+          aria-label={`${d?.projects.total ?? 0} active projects. ${d?.projects.atRisk ?? 0} at risk, ${d?.projects.delayed ?? 0} delayed. ${d?.team.totalMembers ?? 0} team members. Click to view projects.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  {mockProjects.filter((p) => p.progress < 100).length}
+                  {d?.projects.total ?? "—"}
                 </span>
                 <span className="text-[12px] text-text-muted">active projects</span>
               </div>
               <span className="text-[11px] text-text-muted">
-                {mockProjects.filter(p => p.status === "At Risk").length + mockProjects.filter(p => p.status === "Delayed").length > 0
-                  ? `${mockProjects.filter(p => p.status === "At Risk").length} at risk, ${mockProjects.filter(p => p.status === "Delayed").length} delayed`
+                {d && (d.projects.atRisk + d.projects.delayed) > 0
+                  ? `${d.projects.atRisk} at risk, ${d.projects.delayed} delayed`
                   : "All on track"
                 }
               </span>
@@ -244,11 +228,11 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <UsersThreeIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">{mockTeamMembers.filter(m => m.status === "active").length}</span>
+            <span className="font-semibold text-text-primary">{d?.team.totalMembers ?? 0}</span>
             <span className="text-text-muted">team members</span>
             <span aria-hidden="true">&middot;</span>
             <span className="text-text-secondary font-medium">
-              {Math.round(mockTeamMembers.filter(m => m.status === "active").reduce((s, m) => s + m.utilization, 0) / mockTeamMembers.filter(m => m.status === "active").length)}% utilized
+              {d?.team.avgUtilization ?? 0}% utilized
             </span>
           </div>
         </button>
@@ -279,7 +263,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={chartDataMap[chartRange]} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+            <ComposedChart data={[]} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ECEEF2" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
@@ -348,19 +332,18 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {recentTickets.map((ticket) => (
+              {recentTickets.map((ticket: Record<string, unknown>) => (
                 <motion.tr
-                  key={ticket.id}
+                  key={ticket.id as string}
                   whileHover={{ backgroundColor: "rgba(232,240,250,0.4)" }}
-                  onClick={() => setSelectedTicket(ticket)}
                   className="border-b border-ice last:border-0 cursor-pointer transition-colors"
                 >
-                  <td className="py-3 pr-4"><span className="font-mono text-sm text-blue">#{ticket.id}</span></td>
-                  <td className="py-3 pr-4 text-sm text-text-primary max-w-[220px] truncate">{ticket.subject}</td>
-                  <td className="py-3 pr-4 text-xs text-text-secondary">{ticket.clientName}</td>
-                  <td className="py-3 pr-4"><StatusBadge status={ticket.status} /></td>
-                  <td className="py-3 pr-4"><PriorityIndicator priority={ticket.priority} /></td>
-                  <td className="py-3 text-xs text-text-muted whitespace-nowrap">{ticket.updated}</td>
+                  <td className="py-3 pr-4"><span className="font-mono text-sm text-blue">#{ticket.ticketNumber as string}</span></td>
+                  <td className="py-3 pr-4 text-sm text-text-primary max-w-[220px] truncate">{ticket.subject as string}</td>
+                  <td className="py-3 pr-4 text-xs text-text-secondary">{ticket.clientName as string}</td>
+                  <td className="py-3 pr-4"><StatusBadge status={ticket.status as "Open" | "Pending" | "Closed"} /></td>
+                  <td className="py-3 pr-4"><PriorityIndicator priority={ticket.priority as "Critical" | "High" | "Medium" | "Low"} /></td>
+                  <td className="py-3 text-xs text-text-muted whitespace-nowrap">{ticket.updatedAt ? new Date(ticket.updatedAt as string).toLocaleDateString() : ""}</td>
                 </motion.tr>
               ))}
             </tbody>
@@ -382,27 +365,27 @@ export default function DashboardPage() {
           </button>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-          {mockProjects.map((project) => (
+          {activeProjects.map((project: Record<string, unknown>) => (
             <div
-              key={project.id}
+              key={project.id as string}
               className="min-w-[300px] border border-ice/50 rounded-2xl p-5 bg-white shrink-0 hover:shadow-level-2 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               onClick={() => router.push(`/projects/${project.id}`)}
             >
               <p className="font-[family-name:var(--font-aptos)] font-semibold text-sm text-text-primary truncate">
-                {project.name}
+                {project.name as string}
               </p>
-              <p className="text-xs text-text-muted mt-0.5">{project.clientName}</p>
+              <p className="text-xs text-text-muted mt-0.5">{project.clientName as string}</p>
               <div className="flex items-center gap-1.5 mt-2">
-                <span className={`w-2 h-2 rounded-full ${statusDotColor[project.status]}`} />
-                <span className="text-xs text-text-secondary">{project.status}</span>
+                <span className={`w-2 h-2 rounded-full ${statusDotColor[project.status as string] ?? "bg-gray-400"}`} />
+                <span className="text-xs text-text-secondary">{project.status as string}</span>
               </div>
               <div className="mt-3 w-full bg-ice-50 rounded-full h-1.5">
                 <div className="bg-blue h-1.5 rounded-full transition-all" style={{ width: `${project.progress}%` }} />
               </div>
               <div className="flex items-center justify-between mt-2.5">
-                <span className="text-xs text-text-muted">{project.tasksCompleted}/{project.totalTasks} tasks</span>
+                <span className="text-xs text-text-muted">{project.tasksCompleted as number}/{project.totalTasks as number} tasks</span>
                 <span className="flex items-center gap-1 text-xs text-text-muted">
-                  <CalendarBlankIcon size={12} weight="light" />{project.dueDate}
+                  <CalendarBlankIcon size={12} weight="light" />{project.dueDate as string}
                 </span>
               </div>
             </div>
