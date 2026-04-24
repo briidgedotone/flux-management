@@ -5,7 +5,7 @@ import {
   EnvelopeIcon,
   PlusIcon,
 } from "@phosphor-icons/react";
-import { mockTeamMembers } from "@/data/mock-team";
+import { useTeam } from "@/hooks/use-team";
 import type { TeamMember } from "@/data/types";
 
 const roleBadge: Record<TeamMember["role"], string> = {
@@ -21,6 +21,9 @@ const roleLabel: Record<TeamMember["role"], string> = {
 };
 
 export default function TeamPage() {
+  const { data: rawData, isLoading, error } = useTeam();
+  const teamMembers = (rawData as any)?.data as TeamMember[] ?? [];
+
   return (
     <div className="space-y-6">
       {/* ── Header ── */}
@@ -43,8 +46,14 @@ export default function TeamPage() {
       </div>
 
       {/* ── Team Grid ── */}
+      {isLoading && (
+        <div className="text-center py-12 text-sm text-text-muted">Loading team...</div>
+      )}
+      {error && (
+        <div className="text-center py-12 text-sm text-error">Failed to load team members.</div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockTeamMembers.map((member) => (
+        {teamMembers.map((member) => (
           <div
             key={member.id}
             className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 hover:shadow-level-2 hover:-translate-y-0.5 transition-all duration-200"
