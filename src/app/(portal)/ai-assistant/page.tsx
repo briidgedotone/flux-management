@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { RobotIcon, PaperPlaneRightIcon, PaperclipIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { aiResponses } from "@/data/mock-ai-responses";
+import { useConversations, useSendMessage } from "@/hooks/use-ai";
 import type { AIMessage } from "@/data/types";
 
 const suggestedQueries = [
@@ -15,26 +15,17 @@ const suggestedQueries = [
   "Show SLA compliance across all clients",
 ];
 
-function getAIResponse(message: string): { content: string; source: string } {
-  const lower = message.toLowerCase();
-  for (const [key, response] of Object.entries(aiResponses)) {
-    const keywords = key.split(",").map((k) => k.trim().toLowerCase());
-    if (keywords.some((kw) => lower.includes(kw))) {
-      return response;
-    }
-  }
-  return {
-    content: "I can help you with management insights across all your clients. Try asking about tickets, projects, team performance, revenue, or client health scores.",
-    source: "Flux AI Assistant",
-  };
-}
-
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  const { data: rawConversations } = useConversations();
+  const conversations = (rawConversations as any)?.data ?? [];
+  const sendMessageMutation = useSendMessage();
 
   const scrollToBottom = () => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -53,15 +44,34 @@ export default function AIAssistantPage() {
     setInput("");
     setIsTyping(true);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    setTimeout(() => {
-      const response = getAIResponse(msg);
-      const aiMessage: AIMessage = {
-        id: (Date.now() + 1).toString(), role: "assistant", content: response.content,
-        timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 1200 + Math.random() * 800);
+
+    sendMessageMutation.mutate(
+      { conversationId, message: msg },
+      {
+        onSuccess: (response: any) => {
+          const data = response?.data ?? response;
+          if (data?.conversationId) setConversationId(data.conversationId);
+          const aiMessage: AIMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: data?.reply ?? data?.content ?? "I received your message.",
+            timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+          };
+          setMessages((prev) => [...prev, aiMessage]);
+          setIsTyping(false);
+        },
+        onError: () => {
+          const errorMessage: AIMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "Sorry, I encountered an error. Please try again.",
+            timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+          setIsTyping(false);
+        },
+      }
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
