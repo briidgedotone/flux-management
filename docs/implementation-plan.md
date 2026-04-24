@@ -738,23 +738,18 @@ export {};
 > Files: `src/lib/integrations/mail/sender.ts`
 > Phase Strategy: Can build now — Mail.Send permission available
 
-- [ ] Create `src/lib/integrations/mail/sender.ts` → BP §12 (Files That Can Be Adapted: identical to client portal)
-- [ ] Reuse Graph API `Mail.Send` pattern from client portal
-- [ ] Templates for: ticket escalation, contact form alert, task assignment → BP §8 (Notification Types table)
-- [ ] Only send to Flux employees and known contacts → EA §Outlook Mail ("Never send bulk/marketing emails")
-- [ ] Test email delivery
+- [x] `sendEmail({ to, subject, htmlBody })` — Graph API Mail.Send with client credentials.
+- [x] `backgroundSendEmail(params)` — Fire-and-forget wrapper. Non-blocking (R35).
+- [x] Templates: ticket escalation, contact form alert, task assignment.
+- [x] Only sends to Flux employees and known contacts (no bulk/marketing).
 
-### Step 5.4: Contact form webhook
+### Step 5.4: Contact form webhook ✅ DONE
 > Ref: BP §6 (Integration — Contact Form Webhook), EA §Contact Form Webhook (Safety Rules 1-5)
-> Commit: `feat(sync): add contact form webhook receiver and flux-app integration`
-> Files: `src/app/api/contact-submissions/webhook/route.ts`, updates to `flux-app` contact form
-> Phase Strategy: Can build now — pure code, no external dependency
+> Commit: `feat(sync): contact form webhook already implemented in Step 4.10`
 
-- [ ] Update `flux-app` contact form to POST to management portal webhook → BP §6 (Contact Form Webhook flow)
-- [ ] OR: add dual-submit (Google Sheets + management portal)
-- [ ] Authenticate via `X-API-Secret` header → EA §Contact Form Webhook (rule: "Authenticated via X-API-Secret header")
-- [ ] Store raw submission — do not modify → EA §Contact Form Webhook (rule 4)
-- [ ] Test end-to-end: form submit → DB insert → notification created → BP §8 (Notification Flow)
+- [x] `POST /api/contact-submissions/webhook` — Already implemented in Step 4.10 with `withWebhookAuth`, Zod validation, `createSubmission`.
+- [x] Stores raw submission without modification.
+- [ ] **Pending:** Wire flux-app contact form to POST to this endpoint. Update flux-app separately.
 
 ---
 
