@@ -561,13 +561,14 @@ export {};
 - [x] `createSubmission(data)` — Stores raw webhook data without modification.
 - [x] Tests: 5 tests in `src/__tests__/phase-3/contact-submissions.test.ts` — all pass.
 
-### Step 3.9: `activity-log.ts`
+### Step 3.9: `activity-log.ts` ✅ DONE
 > Ref: BP §4 (Schema — `activity_log` table), SO §5 (Audit Logging — What Gets Logged, What Does NOT Get Logged, Retention)
 > Commit: `feat(db): add activity log query module for audit trail`
 > Files: `src/lib/db/queries/activity-log.ts`
 
-- [ ] `logActivity(userId, action, entityType, entityId, orgId, description, metadata)` — Write audit entry → SO §5 (field definitions)
-- [ ] `listActivityLog(filters)` — By entity, user, or org with pagination
+- [x] `logActivity(userId, action, entityType, entityId, orgId, description, metadata)` — Write audit entry with optional JSONB metadata.
+- [x] `listActivityLog(filters)` — By entityType, entityId, userId, organizationId, action. Paginated, joins user name/email.
+- [x] Tests: 6 tests in `src/__tests__/phase-3/activity-log.test.ts` — all pass.
 
 ---
 
