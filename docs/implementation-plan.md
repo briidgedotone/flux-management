@@ -410,16 +410,18 @@ export {};
 - [x] Cookie config: HTTP-only, Secure, SameSite=Lax, 24h expiry → BP §3 (Cookie Configuration)
 - [x] Session revocation via in-memory JTI set
 
-### Step 2.3: Auth middleware
+### Step 2.3: Auth middleware ✅ DONE
 > Ref: BP §3 (Auth — Middleware), BP §5 (API Routes — Route Handler Pattern), SO §4 (Role-Based Access Control — Enforcement Pattern)
 > Commit: `feat(auth): add withManagementAuth and withRole middleware`
 > Files: `src/lib/auth/middleware.ts`
 
-- [ ] Create `src/lib/auth/middleware.ts`
-- [ ] `withManagementAuth(request, handler)` — extract JWT, verify, lookup user, pass context → BP §3 (Middleware — withManagementAuth)
-- [ ] `withRole(request, allowedRoles, handler)` — restrict by role → BP §3 (Middleware — withRole), SO §4 (Sensitive Endpoints list)
-- [ ] Return 401 for missing/invalid token, 403 for insufficient role → BP §3 (Auth — Role Verification)
-- [ ] Reject users with `client` role → SO §3 (Role Verification: "If user role is client, access is denied")
+- [x] Create `src/lib/auth/middleware.ts`
+- [x] `withManagementAuth(request, handler)` — extract JWT, verify, lookup user, pass context → BP §3 (Middleware — withManagementAuth)
+- [x] `withRole(request, allowedRoles, handler)` — restrict by role → BP §3 (Middleware — withRole), SO §4 (Sensitive Endpoints list)
+- [x] `withWebhookAuth(request, handler)` — API key auth for contact form webhook
+- [x] Return 401 for missing/invalid token, 403 for insufficient role → BP §3 (Auth — Role Verification)
+- [x] Reject users with `client` role → SO §3 (Role Verification: "If user role is client, access is denied")
+- [x] Also implemented prerequisites: `src/lib/api/response.ts`, `src/lib/api/rate-limit.ts`, `src/lib/db/queries/users.ts`
 
 ### Step 2.4: Auth API routes
 > Ref: BP §5 (API Routes — Auth Routes), BP §3 (Auth Flow steps 1-8)
