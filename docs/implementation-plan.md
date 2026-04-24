@@ -528,16 +528,17 @@ export {};
 - [x] `getTicketAnalyticsReport(clientId, range)` — Volume, priority breakdown, resolution times. `is_active=true` enforced (R11).
 - [x] Tests: 8 tests in `src/__tests__/phase-3/reports.test.ts` — all pass.
 
-### Step 3.6: `ai.ts`
+### Step 3.6: `ai.ts` ✅ DONE
 > Ref: BP §5 (API Routes — AI Assistant), BP §7 (AI Assistant Architecture), BP §4 (Schema — shared `ai_conversations`, `ai_messages` tables)
 > Commit: `feat(db): add AI conversation and message query module`
 > Files: `src/lib/db/queries/ai.ts`
 
-- [ ] `createConversation(userId)` — New conversation → BP §4 (Schema — `ai_conversations`)
-- [ ] `listConversations(userId)` — User's conversations
-- [ ] `getConversation(conversationId)` — Messages in conversation
-- [ ] `addMessage(conversationId, role, content)` — Append message → BP §4 (Schema — `ai_messages`)
-- [ ] `deleteConversation(conversationId)` — Delete with cascade
+- [x] `createConversation(userId, title)` — Uses first active org as context for management users (org_id=NULL).
+- [x] `listConversations(userId)` — Most recent first, limit 50.
+- [x] `getConversation(conversationId)` — With all messages in chronological order.
+- [x] `addMessage(conversationId, role, content, tokensUsed)` — Updates conversation timestamp.
+- [x] `deleteConversation(conversationId)` — CASCADE deletes messages.
+- [x] Tests: 6 tests in `src/__tests__/phase-3/ai.test.ts` — all pass.
 
 ### Step 3.7: `notifications.ts`
 > Ref: BP §5 (API Routes — Notifications), BP §8 (Notification System — Types, Delivery Channels), BP §4 (Schema — `management_notifications` table)
