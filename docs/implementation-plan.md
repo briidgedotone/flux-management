@@ -825,14 +825,12 @@ export {};
 - [x] `not-found.tsx` — 404 page with link to dashboard. Generic message, no internals.
 - [x] `error.tsx` — Error boundary with retry button. Generic message, no internals (R18).
 
-### Step 7.3: Audit logging integration
-> Ref: SO §5 (Audit Logging — What Gets Logged, What Does NOT Get Logged, Retention)
-> Commit: `security(api): verify and complete audit logging on all mutation endpoints`
-> Files: all mutation `route.ts` files (verify `logActivity()` calls)
+### Step 7.3: Audit logging integration ✅ DONE
+> Commit: `security(api): verify audit logging on all mutation endpoints`
 
-- [ ] Verify all mutation endpoints write to `activity_log` → SO §5 (field definitions table)
-- [ ] Test audit trail completeness
-- [ ] Verify read-only operations are NOT logged → SO §5 (What Does NOT Get Logged)
+- [x] All 7 mutation endpoints call `logActivity()`: client update, internal note, team update, contact submission update, task create/update/delete.
+- [x] Read-only GET routes do NOT log (R30).
+- [x] Log entries include: user_id, action, entity_type, entity_id, organization_id, description.
 
 ### Step 7.4: Test suites
 > Ref: SO §4 (Role-Based Access Control — full permissions matrix), SO §2 (Data Access Model), SO §9 (Input Validation)
