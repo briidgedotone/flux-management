@@ -770,21 +770,14 @@ export {};
 - [x] `QueryProvider` client component wrapping root layout.
 - [x] `QueryClientProvider` added to `layout.tsx`.
 
-### Step 6.3: React Query hooks
-> Ref: BP §11 (Folder Structure — hooks directory), BP §5 (API Routes — all endpoints define what hooks fetch)
+### Step 6.3: React Query hooks ✅ DONE
 > Commit: `feat(ui): add React Query hooks for all data domains`
-> Files: `src/hooks/use-auth.ts`, `src/hooks/use-clients.ts`, `src/hooks/use-tickets.ts`, `src/hooks/use-projects.ts`, `src/hooks/use-team.ts`, `src/hooks/use-reports.ts`, `src/hooks/use-ai.ts`, `src/hooks/use-notifications.ts`, `src/hooks/use-contact-submissions.ts`
+> Files: 11 hook files in `src/hooks/`
 
-- [ ] Create hooks in `src/hooks/`:
-  - `use-auth.ts` — `useAuth()` → BP §5 (GET /api/auth/me)
-  - `use-clients.ts` — `useClients()`, `useClient()`, `useClientStats()`, `useUpdateClient()` → BP §5 (Clients endpoints)
-  - `use-tickets.ts` — `useTickets()`, `useTicket()`, `useTicketStats()`, `useAddNote()` → BP §5 (Tickets endpoints)
-  - `use-projects.ts` — `useProjects()`, `useProject()`, `useProjectStats()`, `useCreateTask()`, `useUpdateTask()`, `useDeleteTask()` → BP §5 (Projects endpoints)
-  - `use-team.ts` — `useTeam()`, `useTeamMember()`, `useUpdateTeamMember()` → BP §5 (Team endpoints)
-  - `use-reports.ts` — `useRevenueReport()`, `useTeamPerformanceReport()`, `useSlaReport()`, `useTicketAnalyticsReport()` → BP §5 (Reports endpoints)
-  - `use-ai.ts` — `useSendMessage()`, `useConversations()`, `useConversation()`, `useDeleteConversation()` → BP §5 (AI endpoints)
-  - `use-notifications.ts` — `useNotifications()`, `useUnreadCount()`, `useMarkRead()` → BP §5 (Notifications endpoints)
-  - `use-contact-submissions.ts` — `useContactSubmissions()`, `useUpdateSubmission()` → BP §5 (Contact Submissions endpoints)
+- [x] `use-auth.ts`, `use-dashboard.ts`, `use-clients.ts`, `use-tickets.ts`, `use-projects.ts`
+- [x] `use-team.ts`, `use-reports.ts`, `use-ai.ts`, `use-notifications.ts` (30s poll on unread count)
+- [x] `use-contact-submissions.ts`, `use-connectors.ts`
+- [x] All mutations invalidate relevant query keys on success.
 
 ### Step 6.4: Wire dashboard page
 > Ref: BP §5 (API Routes — Dashboard)
