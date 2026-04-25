@@ -5,6 +5,32 @@ import { StatusBadge } from "./status-badge";
 import { PriorityIndicator } from "./priority-indicator";
 import { AnimatePresence, motion } from "framer-motion";
 
+/** Strip HTML tags and CSS, extract readable text. R19: no dangerouslySetInnerHTML. */
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html
+    // Remove style tags and their content
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    // Remove CSS blocks (inline style declarations at the top of Atera descriptions)
+    .replace(/[a-z,\s]+\{[^}]*\}/gi, "")
+    // Replace common block tags with newlines
+    .replace(/<\/(p|div|br|tr|li|h[1-6])>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    // Remove all remaining HTML tags
+    .replace(/<[^>]+>/g, "")
+    // Decode common HTML entities
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    // Collapse multiple blank lines into one
+    .replace(/\n{3,}/g, "\n\n")
+    // Trim whitespace
+    .trim();
+}
+
 interface TicketSlideOverProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ticket: any | null;
@@ -143,7 +169,7 @@ export function TicketSlideOver({ ticket, onClose }: TicketSlideOverProps) {
                   <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[15px] text-text-primary mt-6 mb-3">
                     Description
                   </h3>
-                  <p className="text-sm text-text-primary leading-relaxed whitespace-pre-line">{ticket.description}</p>
+                  <p className="text-sm text-text-primary leading-relaxed whitespace-pre-line">{stripHtml(ticket.description)}</p>
                 </>
               )}
 
