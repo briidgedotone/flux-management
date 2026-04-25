@@ -48,9 +48,7 @@ export default function ClientsPage() {
             <p className="text-sm text-text-secondary mt-0.5">Manage your client accounts</p>
           </div>
         </div>
-        <button onClick={() => router.push("/clients/new")} className="flex items-center gap-2 bg-blue hover:bg-blue-light text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors duration-150">
-          <PlusIcon size={16} weight="bold" /> Add Client
-        </button>
+{/* Add Client — not yet implemented */}
       </div>
 
       {/* Search & Filters */}

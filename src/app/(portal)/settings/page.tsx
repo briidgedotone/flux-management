@@ -61,9 +61,7 @@ function GeneralTab({ user }: { user: { name: string; email: string; role: strin
           </div>
         ))}
       </div>
-      <div className="flex justify-end">
-        <button className="h-10 px-5 bg-blue hover:bg-blue-light text-white text-sm font-medium rounded-lg transition-colors duration-150">Save Changes</button>
-      </div>
+      {/* Save Changes — not yet wired to API */}
     </div>
   );
 }
@@ -119,9 +117,7 @@ function IntegrationsTab() {
                   {int.status === "connected" ? "Connected" : "Disconnected"}
                 </span>
               </div>
-              <button className={`text-xs ${int.status === "connected" ? "text-text-muted hover:text-error" : "text-blue hover:underline"}`}>
-                {int.status === "connected" ? "Disconnect" : "Connect"}
-              </button>
+              {/* Connect/Disconnect managed via Azure portal */}
             </div>
           </div>
         ))}
@@ -168,52 +164,24 @@ function NotificationsTab() {
 }
 
 function SecurityTab() {
-  const [showPassword, setShowPassword] = useState(false);
-
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[17px] text-text-primary mb-3">Change Password</h3>
-        <div className="space-y-3 max-w-md">
-          {["Current Password", "New Password", "Confirm New Password"].map((label) => (
-            <div key={label}>
-              <label className="block text-[11px] font-medium uppercase tracking-[0.08em] text-text-muted mb-1.5">{label}</label>
-              <div className="relative">
-                <input type={showPassword ? "text" : "password"} className="w-full h-10 bg-white border border-ice rounded-xl px-3 pr-10 text-sm text-text-primary focus:border-blue focus:ring-2 focus:ring-blue-10 outline-none transition-colors" />
-                <button type="button" onClick={() => setShowPassword((p) => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary">
-                  {showPassword ? <EyeSlashIcon size={16} weight="light" /> : <EyeIcon size={16} weight="light" />}
-                </button>
-              </div>
-            </div>
-          ))}
-          <button className="h-10 px-5 bg-blue hover:bg-blue-light text-white text-sm font-medium rounded-lg transition-colors duration-150">Update Password</button>
-        </div>
-      </div>
-      <div className="border-t border-ice pt-6">
-        <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[17px] text-text-primary mb-3">Two-Factor Authentication</h3>
-        <p className="text-sm text-text-secondary mb-3">Add an extra layer of security to your account.</p>
-        <button className="h-10 px-5 bg-ice-30 hover:bg-ice text-text-primary text-sm font-medium rounded-lg border border-ice transition-colors duration-150">Enable 2FA</button>
-      </div>
-      <div className="border-t border-ice pt-6">
-        <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[17px] text-text-primary mb-3">Active Sessions</h3>
-        <div className="space-y-2">
-          {[
-            { device: "MacBook Pro - Chrome", location: "New York, US", current: true },
-            { device: "iPhone 15 - Safari", location: "New York, US", current: false },
-          ].map((session) => (
-            <div key={session.device} className="flex items-center justify-between p-3 bg-white border border-ice/50 rounded-2xl">
-              <div>
-                <p className="text-sm text-text-primary">{session.device}</p>
-                <p className="text-xs text-text-muted">{session.location}</p>
-              </div>
-              {session.current ? (
-                <span className="text-xs text-success font-medium">Current</span>
-              ) : (
-                <button className="text-xs text-error hover:underline">Revoke</button>
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="bg-blue-10/50 border border-blue/10 rounded-2xl p-6">
+        <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[17px] text-text-primary mb-2">
+          Managed by Microsoft Azure AD
+        </h3>
+        <p className="text-sm text-text-secondary leading-relaxed">
+          Authentication is managed through Microsoft Azure AD (Entra ID). Password changes, MFA, and session management are handled through your Microsoft account.
+        </p>
+        <a
+          href="https://myaccount.microsoft.com/security-info"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 mt-4 text-sm font-medium text-blue hover:underline"
+        >
+          Manage security settings in Microsoft
+          <span aria-hidden="true">&rarr;</span>
+        </a>
       </div>
     </div>
   );
