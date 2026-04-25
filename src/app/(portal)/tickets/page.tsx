@@ -91,13 +91,17 @@ export default function TicketsPage() {
                   <td className="px-5"><PriorityIndicator priority={t.priority} /></td>
                   <td className="px-5">
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-navy-80 flex items-center justify-center">
-                        <span className="text-[10px] text-white font-medium">{t.assignedTo.initials}</span>
-                      </div>
-                      <span className="text-xs text-text-secondary">{t.assignedTo.name}</span>
+                      {t.assignedToName && (
+                        <>
+                          <div className="w-6 h-6 rounded-full bg-navy-80 flex items-center justify-center">
+                            <span className="text-[10px] text-white font-medium">{(t.assignedToName as string).split(" ").map((n: string) => n[0]).join("")}</span>
+                          </div>
+                          <span className="text-xs text-text-secondary">{t.assignedToName}</span>
+                        </>
+                      )}
                     </div>
                   </td>
-                  <td className="px-5 text-xs text-text-muted">{t.updated}</td>
+                  <td className="px-5 text-xs text-text-muted">{t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : ""}</td>
                 </motion.tr>
               ))}
             </tbody>
