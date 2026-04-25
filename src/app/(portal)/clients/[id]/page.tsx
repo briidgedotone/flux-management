@@ -194,8 +194,8 @@ export default function ClientDetailPage() {
                     <td className="py-3 pr-4 text-sm text-text-primary max-w-[220px] truncate">{t.subject}</td>
                     <td className="py-3 pr-4"><StatusBadge status={t.status} /></td>
                     <td className="py-3 pr-4"><PriorityIndicator priority={t.priority} /></td>
-                    <td className="py-3 pr-4 text-xs text-text-secondary">{t.assignedTo.name}</td>
-                    <td className="py-3 text-xs text-text-muted">{t.updated}</td>
+                    <td className="py-3 pr-4 text-xs text-text-secondary">{t.assignedToName ?? ""}</td>
+                    <td className="py-3 text-xs text-text-muted">{t.updatedAt ? new Date(t.updatedAt).toLocaleDateString() : ""}</td>
                   </motion.tr>
                 ))}
               </tbody>
