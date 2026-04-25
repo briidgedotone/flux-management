@@ -21,15 +21,15 @@ async function run() {
 
   try {
     // --- User role updates (confirmed — applied to local DB on April 25, 2026) ---
-    await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000001"]); // Brandon Devier
-    await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000003"]); // Zack Devier
-    await pool.query("UPDATE users SET organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000002"]); // Cameron Cannon (director)
+    await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["3a2338ab-1852-4159-9c51-9474ef409715"]); // Brandon Devier
+    await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["d6f9a017-ff5b-4b23-81b9-6221d3f13313"]); // Zack Devier
+    await pool.query("UPDATE users SET organization_id = NULL WHERE id = $1", ["c565cdb2-284b-4c39-bdcd-9d967cbfe901"]); // Cameron Cannon (director)
     console.log("[seed] user roles updated");
 
     // --- Client profiles for real client orgs ---
     const profiles = [
       {
-        orgId: "a0000000-0000-0000-0000-000000000002", // Armada Analytics
+        orgId: "a035b3cd-7f53-44e9-ab94-46ff68871cf9", // Armada Analytics
         industry: "Financial Services",
         revenue: 42000,
         contractStatus: "active",
@@ -39,7 +39,7 @@ async function run() {
         contactEmail: "admin@armadaanalytics.com",
       },
       {
-        orgId: "a0000000-0000-0000-0000-000000000003", // OnPoint CFO
+        orgId: "8f4b5e20-2ea8-4293-8878-3d04fd1f0fe0", // OnPoint CFO
         industry: "Professional Services",
         revenue: 28000,
         contractStatus: "active",
@@ -62,9 +62,9 @@ async function run() {
 
     // --- Team members for management users ---
     const members = [
-      { userId: "b0000000-0000-0000-0000-000000000001", dept: "Leadership" },  // Brandon Devier
-      { userId: "b0000000-0000-0000-0000-000000000003", dept: "Leadership" },  // Zack Devier
-      { userId: "b0000000-0000-0000-0000-000000000002", dept: "Services" },    // Cameron Cannon
+      { userId: "3a2338ab-1852-4159-9c51-9474ef409715", dept: "Leadership" },  // Brandon Devier
+      { userId: "d6f9a017-ff5b-4b23-81b9-6221d3f13313", dept: "Leadership" },  // Zack Devier
+      { userId: "c565cdb2-284b-4c39-bdcd-9d967cbfe901", dept: "Services" },    // Cameron Cannon
     ];
 
     for (const m of members) {
