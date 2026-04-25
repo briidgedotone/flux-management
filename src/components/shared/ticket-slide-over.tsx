@@ -27,8 +27,8 @@ function stripHtml(html: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ")
-    // Collapse multiple blank lines into one
-    .replace(/\n{3,}/g, "\n\n")
+    // Collapse multiple blank lines into single newline
+    .replace(/\n{2,}/g, "\n")
     // Trim whitespace
     .trim();
 }
@@ -171,7 +171,7 @@ export function TicketSlideOver({ ticket, onClose }: TicketSlideOverProps) {
                   <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[15px] text-text-primary mt-6 mb-3">
                     Description
                   </h3>
-                  <p className="text-sm text-text-primary leading-relaxed whitespace-pre-line">{stripHtml(ticket.description)}</p>
+                  <p className="text-sm text-text-primary leading-normal whitespace-pre-line">{stripHtml(ticket.description)}</p>
                 </>
               )}
 
