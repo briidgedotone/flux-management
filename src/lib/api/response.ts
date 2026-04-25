@@ -13,11 +13,13 @@ export function errorResponse(code: string, message: string, status: number) {
 
 export function paginatedResponse<T>(data: T[], total: number, page: number, limit: number) {
   return NextResponse.json({
-    data,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
+    data: {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
   });
 }
 
