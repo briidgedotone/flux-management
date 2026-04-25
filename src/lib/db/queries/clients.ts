@@ -65,10 +65,10 @@ export async function listClients(filters: ClientListFilters = {}) {
   const sortOrder = order === "desc" ? "DESC" : "ASC";
   const offset = (page - 1) * limit;
 
-  // Count query
+  // Count query — INNER JOIN excludes orgs without a client_profile (e.g., Flux Technologies itself)
   const countResult = await query<{ count: string }>(
     `SELECT COUNT(*) FROM organizations o
-     LEFT JOIN client_profiles cp ON o.id = cp.organization_id
+     JOIN client_profiles cp ON o.id = cp.organization_id
      WHERE ${whereClause}`,
     params,
   );
@@ -93,13 +93,13 @@ export async function listClients(filters: ClientListFilters = {}) {
        (SELECT COUNT(*) FROM projects p WHERE p.organization_id = o.id AND p.status != 'Completed') AS active_projects,
        (SELECT COALESCE(
          ROUND(
-           COUNT(*) FILTER (WHERE t2.resolution_time_hours IS NOT NULL AND t2.resolution_time_hours <= cp.sla_target) * 100.0
+           COUNT(*) FILTER (WHERE t2.resolution_time_hours IS NOT NULL AND t2.resolution_time_hours <= 24) * 100.0
            / NULLIF(COUNT(*) FILTER (WHERE t2.resolution_time_hours IS NOT NULL), 0)
          , 0)
        , 0) FROM tickets t2 WHERE t2.organization_id = o.id) AS sla_compliance,
        (SELECT MAX(t3.updated_at) FROM tickets t3 WHERE t3.organization_id = o.id) AS last_activity
      FROM organizations o
-     LEFT JOIN client_profiles cp ON o.id = cp.organization_id
+     JOIN client_profiles cp ON o.id = cp.organization_id
      WHERE ${whereClause}
      ORDER BY ${sortCol} ${sortOrder}
      LIMIT $${idx++} OFFSET $${idx++}`,
