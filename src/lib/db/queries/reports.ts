@@ -60,6 +60,7 @@ export async function getTeamPerformanceReport(range: "7d" | "30d" | "90d" = "30
      FROM users u
      JOIN team_members tm ON u.id = tm.user_id
      WHERE u.is_active = true AND tm.status = 'active'
+       AND u.email NOT LIKE '%@test.flux.internal'
      ORDER BY tickets_resolved DESC`,
     [days],
   );

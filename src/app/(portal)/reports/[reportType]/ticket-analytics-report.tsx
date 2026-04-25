@@ -25,6 +25,8 @@ export function TicketAnalyticsReport() {
   const avgHours = r?.avgResolutionHours ?? 0;
   const priority = r?.priorityBreakdown ?? { critical: 0, high: 0, medium: 0, low: 0 };
 
+  const maxPriority = Math.max(priority.critical, priority.high, priority.medium, priority.low, 1);
+
   const pieData = [
     { name: "Critical", value: priority.critical, color: priorityColors.critical },
     { name: "High", value: priority.high, color: priorityColors.high },
@@ -58,7 +60,7 @@ export function TicketAnalyticsReport() {
             {pieData.map((d) => (
               <div key={d.name} className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: d.color }} />
-                <span className="text-[11px] text-text-secondary">{d.name} ({d.value})</span>
+                <span className="text-[11px] text-text-secondary">{d.name}: {d.value} ({total > 0 ? ((d.value / total) * 100).toFixed(1) : 0}%)</span>
               </div>
             ))}
           </div>
@@ -77,10 +79,12 @@ export function TicketAnalyticsReport() {
               <div key={p.label}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[13px] font-medium text-text-primary">{p.label}</span>
-                  <span className="text-[13px] font-semibold text-text-primary">{p.value}</span>
+                  <span className="text-[13px] text-text-secondary">
+                    {p.value} <span className="text-text-muted">({total > 0 ? ((p.value / total) * 100).toFixed(1) : 0}%)</span>
+                  </span>
                 </div>
                 <div className="h-2.5 bg-ice-30 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700" style={{ width: total > 0 ? `${(p.value / total) * 100}%` : "0%", backgroundColor: p.color }} />
+                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${maxPriority > 0 ? (p.value / maxPriority) * 100 : 0}%`, backgroundColor: p.color }} />
                 </div>
               </div>
             ))}

@@ -20,6 +20,7 @@ export async function listTeamMembers() {
      FROM users u
      JOIN team_members tm ON u.id = tm.user_id
      WHERE u.is_active = true AND tm.status = 'active'
+       AND u.email NOT LIKE '%@test.flux.internal'
      ORDER BY u.name ASC`,
   );
 
