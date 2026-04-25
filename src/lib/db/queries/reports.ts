@@ -47,14 +47,14 @@ export async function getTeamPerformanceReport(range: "7d" | "30d" | "90d" = "30
        u.id, u.name, u.email, u.role,
        tm.capacity_hours_week, tm.utilization_target, tm.department,
        (SELECT COUNT(*) FROM tickets t
-        WHERE t.assigned_to_email = u.email
+        WHERE (t.assigned_to_email = u.email OR t.assigned_to_name = u.name)
         AND t.status = 'Closed'
         AND t.updated_at >= now() - interval '1 day' * $1) AS tickets_resolved,
        (SELECT COUNT(*) FROM project_tasks pt
-        WHERE pt.assigned_to_email = u.email
+        WHERE (pt.assigned_to_email = u.email OR pt.assigned_to_name = u.name)
         AND pt.status != 'Complete') AS active_tasks,
        (SELECT COALESCE(AVG(t2.resolution_time_hours), 0) FROM tickets t2
-        WHERE t2.assigned_to_email = u.email
+        WHERE (t2.assigned_to_email = u.email OR t2.assigned_to_name = u.name)
         AND t2.resolution_time_hours IS NOT NULL
         AND t2.updated_at >= now() - interval '1 day' * $1) AS avg_resolution_hours
      FROM users u

@@ -12,11 +12,11 @@ export async function listTeamMembers() {
        tm.id AS member_id, tm.department, tm.status,
        tm.capacity_hours_week, tm.utilization_target, tm.hire_date,
        (SELECT COUNT(*) FROM tickets t
-        WHERE t.assigned_to_email = u.email AND t.status = 'Closed') AS tickets_resolved,
+        WHERE (t.assigned_to_email = u.email OR t.assigned_to_name = u.name) AND t.status = 'Closed') AS tickets_resolved,
        (SELECT COUNT(*) FROM project_tasks pt
-        WHERE pt.assigned_to_email = u.email AND pt.status != 'Complete') AS active_tasks,
+        WHERE (pt.assigned_to_email = u.email OR pt.assigned_to_name = u.name) AND pt.status != 'Complete') AS active_tasks,
        (SELECT COALESCE(AVG(t2.resolution_time_hours), 0) FROM tickets t2
-        WHERE t2.assigned_to_email = u.email AND t2.resolution_time_hours IS NOT NULL) AS avg_resolution_hours
+        WHERE (t2.assigned_to_email = u.email OR t2.assigned_to_name = u.name) AND t2.resolution_time_hours IS NOT NULL) AS avg_resolution_hours
      FROM users u
      JOIN team_members tm ON u.id = tm.user_id
      WHERE u.is_active = true AND tm.status = 'active'
@@ -52,11 +52,11 @@ export async function getTeamMember(userId: string) {
        tm.capacity_hours_week, tm.utilization_target, tm.hire_date,
        tm.created_at, tm.updated_at,
        (SELECT COUNT(*) FROM tickets t
-        WHERE t.assigned_to_email = u.email AND t.status = 'Closed') AS tickets_resolved,
+        WHERE (t.assigned_to_email = u.email OR t.assigned_to_name = u.name) AND t.status = 'Closed') AS tickets_resolved,
        (SELECT COUNT(*) FROM project_tasks pt
-        WHERE pt.assigned_to_email = u.email AND pt.status != 'Complete') AS active_tasks,
+        WHERE (pt.assigned_to_email = u.email OR pt.assigned_to_name = u.name) AND pt.status != 'Complete') AS active_tasks,
        (SELECT COALESCE(AVG(t2.resolution_time_hours), 0) FROM tickets t2
-        WHERE t2.assigned_to_email = u.email AND t2.resolution_time_hours IS NOT NULL) AS avg_resolution_hours
+        WHERE (t2.assigned_to_email = u.email OR t2.assigned_to_name = u.name) AND t2.resolution_time_hours IS NOT NULL) AS avg_resolution_hours
      FROM users u
      JOIN team_members tm ON u.id = tm.user_id
      WHERE u.id = $1`,
