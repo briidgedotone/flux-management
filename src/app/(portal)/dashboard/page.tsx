@@ -400,8 +400,12 @@ export default function DashboardPage() {
             onClick={() => router.push("/tickets")}
             className="flex items-center gap-2 bg-blue hover:bg-blue-light text-white text-xs font-medium px-4 py-2 rounded-full transition-colors duration-150"
           >
-            <TicketIcon size={14} weight="light" />
-            View Tickets
+            <PlusIcon size={14} weight="light" />
+            New Ticket
+          </button>
+          <button className="flex items-center gap-2 text-text-on-dark-muted hover:text-white text-xs font-medium px-3 py-2 rounded-full transition-colors duration-150">
+            <ExportIcon size={14} weight="light" />
+            Export
           </button>
           <button
             onClick={() => router.push("/ai-assistant")}
