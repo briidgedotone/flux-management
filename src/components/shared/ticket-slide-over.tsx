@@ -15,9 +15,9 @@ function stripHtml(html: string): string {
     .replace(/[a-z,\s]+\{[^}]*\}/gi, "")
     // Remove CSS selector lines (e.g., "p, strong, em, ul, ol, li, img, h1, h2, h3...")
     .replace(/^[\s]*[a-z][a-z0-9,\s]*(?:,\s*[a-z][a-z0-9]*)+\s*$/gim, "")
-    // Replace common block tags with newlines
-    .replace(/<\/(p|div|br|tr|li|h[1-6])>/gi, "\n")
+    // Replace block-end tags and <br> with a marker, then normalize
     .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, "\n")
     // Remove all remaining HTML tags
     .replace(/<[^>]+>/g, "")
     // Decode common HTML entities
@@ -31,8 +31,8 @@ function stripHtml(html: string): string {
     .replace(/[ \t]+/g, " ")
     // Remove lines that are only whitespace
     .replace(/^\s+$/gm, "")
-    // Collapse any multiple newlines into single newline
-    .replace(/\n{2,}/g, "\n")
+    // Collapse 3+ newlines into double (keeps one blank line between paragraphs)
+    .replace(/\n{3,}/g, "\n\n")
     // Trim whitespace
     .trim();
 }
