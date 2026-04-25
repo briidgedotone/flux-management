@@ -42,10 +42,7 @@ export default function TeamPage() {
             <p className="text-xs text-text-muted">Manage team members</p>
           </div>
         </div>
-        <button className="flex items-center gap-1.5 px-4 py-2 bg-blue text-white text-sm font-medium rounded-lg hover:bg-blue/90 transition-colors">
-          <PlusIcon size={16} weight="bold" />
-          Invite Member
-        </button>
+{/* Invite Member — not yet implemented */}
       </div>
 
       {/* ── Team Grid ── */}
