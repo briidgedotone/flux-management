@@ -8,21 +8,24 @@ import {
 import { useTeam } from "@/hooks/use-team";
 import type { TeamMember } from "@/data/types";
 
-const roleBadge: Record<TeamMember["role"], string> = {
+const roleBadge: Record<string, string> = {
   "co-ceo": "bg-blue-10 text-blue",
   director: "bg-success-tint text-success",
   employee: "bg-ice-30 text-text-secondary",
+  admin: "bg-blue-10 text-blue",
 };
 
-const roleLabel: Record<TeamMember["role"], string> = {
+const roleLabel: Record<string, string> = {
   "co-ceo": "Co-CEO",
   director: "Director",
   employee: "Employee",
+  admin: "Admin",
 };
 
 export default function TeamPage() {
   const { data: rawData, isLoading, error } = useTeam();
-  const teamMembers = (rawData as any)?.data as TeamMember[] ?? [];
+  // api.get unwraps { data: T } → T, so rawData is the array directly
+  const teamMembers: any[] = (rawData as any[]) ?? [];
 
   return (
     <div className="space-y-6">
@@ -100,13 +103,13 @@ export default function TeamPage() {
                   Utilization
                 </span>
                 <span className="text-xs text-text-secondary font-medium">
-                  {member.utilization}%
+                  {member.utilizationTarget ?? 0}%
                 </span>
               </div>
               <div className="w-full bg-ice-50 rounded-full h-1.5">
                 <div
                   className="bg-blue rounded-full h-1.5 transition-all duration-500"
-                  style={{ width: `${member.utilization}%` }}
+                  style={{ width: `${member.utilizationTarget ?? 0}%` }}
                 />
               </div>
             </div>
@@ -121,10 +124,12 @@ export default function TeamPage() {
               </span>
             </div>
 
-            {/* Last Active */}
-            <p className="text-xs text-text-muted mt-3">
-              Last active: {member.lastActive}
-            </p>
+            {/* Department */}
+            {member.department && (
+              <p className="text-xs text-text-muted mt-3">
+                {member.department}
+              </p>
+            )}
           </div>
         ))}
       </div>
