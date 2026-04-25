@@ -28,24 +28,46 @@ const connectorIcons: Record<Connector["icon"], typeof PlugIcon> = {
   teams: ChatCircleIcon,
 };
 
+const connectorMeta: Record<string, { name: string; description: string; icon: string }> = {
+  atera: { name: "Atera", description: "IT helpdesk tickets and device monitoring", icon: "atera" },
+  planner: { name: "Microsoft Planner", description: "Project tasks and assignments", icon: "planner" },
+  sharepoint: { name: "SharePoint", description: "Documents and tech stack data", icon: "sharepoint" },
+  outlook: { name: "Outlook", description: "Email notifications", icon: "azure-ad" },
+};
+
 export default function ConnectorsPage() {
   const { data: rawData, isLoading, error } = useConnectors();
-  const apiConnectors = (rawData as any)?.data as Connector[] ?? [];
-  const [connectors, setConnectors] = useState<Connector[]>([]);
+  const apiConnectors: any[] = (rawData as any[]) ?? [];
 
-  // Sync API data into local state when it arrives
-  useEffect(() => {
-    if (apiConnectors.length > 0) setConnectors(apiConnectors);
-  }, [apiConnectors.length]);
+  // Aggregate per-client statuses into one card per connector type
+  const connectorMap = new Map<string, any>();
+  for (const c of apiConnectors) {
+    const existing = connectorMap.get(c.connector);
+    if (!existing) {
+      const meta = connectorMeta[c.connector] ?? { name: c.connector, description: "", icon: "atera" };
+      connectorMap.set(c.connector, {
+        id: c.connector,
+        name: meta.name,
+        description: meta.description,
+        icon: meta.icon,
+        status: c.status === "connected" ? "Connected" : "Disconnected",
+        lastSynced: c.lastSynced ? new Date(c.lastSynced).toLocaleString() : "Never",
+        stats: `${c.recordsSynced ?? 0} records synced`,
+        clients: [c.clientName],
+      });
+    } else {
+      existing.clients.push(c.clientName);
+      existing.stats = `${apiConnectors.filter((x: any) => x.connector === c.connector).reduce((s: number, x: any) => s + (x.recordsSynced ?? 0), 0)} records synced`;
+      if (c.status !== "connected") existing.status = "Disconnected";
+      if (c.lastSynced && (!existing.lastSynced || c.lastSynced > existing.lastSynced)) {
+        existing.lastSynced = new Date(c.lastSynced).toLocaleString();
+      }
+    }
+  }
+  const connectors = Array.from(connectorMap.values());
 
   const handleReconnect = (id: string) => {
-    setConnectors((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, status: "Connected" as const, lastSynced: "Synced just now", reconnectMessage: undefined, stats: "Reconnecting..." }
-          : c
-      )
-    );
+    // Placeholder — would trigger a sync
   };
 
   return (
@@ -84,11 +106,11 @@ function ConnectorCard({
   connector,
   onReconnect,
 }: {
-  connector: Connector;
+  connector: any;
   onReconnect: (id: string) => void;
 }) {
   const isConnected = connector.status === "Connected";
-  const Icon = connectorIcons[connector.icon];
+  const Icon = connectorIcons[connector.icon as keyof typeof connectorIcons] ?? PlugIcon;
 
   return (
     <div
