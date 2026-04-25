@@ -20,12 +20,11 @@ async function run() {
   const pool = new Pool({ connectionString: DATABASE_URL });
 
   try {
-    // --- User role updates — UNCOMMENT when roles are confirmed with Brandon ---
-    // TODO: Confirm with Brandon which users get co-ceo/director/employee roles
-    // await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000001"]); // Brandon Devier
-    // await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000003"]); // Zack Devier
-    // await pool.query("UPDATE users SET organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000002"]); // Cameron Cannon
-    // console.log("[seed] user roles updated");
+    // --- User role updates (confirmed — applied to local DB on April 25, 2026) ---
+    await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000001"]); // Brandon Devier
+    await pool.query("UPDATE users SET role = 'co-ceo', organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000003"]); // Zack Devier
+    await pool.query("UPDATE users SET organization_id = NULL WHERE id = $1", ["b0000000-0000-0000-0000-000000000002"]); // Cameron Cannon (director)
+    console.log("[seed] user roles updated");
 
     // --- Client profiles for real client orgs ---
     const profiles = [
