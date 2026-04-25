@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useDashboard } from "@/hooks/use-dashboard";
 import {
   CurrencyDollarIcon,
   UsersThreeIcon,
@@ -85,6 +86,15 @@ const cardVariants = {
 
 export default function ReportsPage() {
   const router = useRouter();
+  const { data: d } = useDashboard();
+
+  // Override hardcoded stats with real data from dashboard API
+  const dynamicStats: Record<string, string> = {};
+  if (d) {
+    dynamicStats["/reports/revenue"] = `$${(d.revenue.totalMonthly / 1000).toFixed(1)}K`;
+    dynamicStats["/reports/team-performance"] = `${d.team.avgUtilization}%`;
+    dynamicStats["/reports/ticket-analytics"] = `${d.tickets.avgResolutionHours.toFixed(1)}h`;
+  }
 
   return (
     <div>
@@ -143,7 +153,7 @@ export default function ReportsPage() {
             <div className="relative flex items-center justify-between mt-5 pt-4 border-t border-ice/50">
               <div>
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-lg text-navy">
-                  {report.stat}
+                  {dynamicStats[report.href] ?? report.stat}
                 </span>
                 <span className="text-[11px] text-text-muted ml-1.5">
                   {report.statLabel}
