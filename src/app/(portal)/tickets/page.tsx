@@ -84,7 +84,7 @@ export default function TicketsPage() {
                   onClick={() => setSelected(t)}
                   className="h-[52px] border-b border-silver-light cursor-pointer transition-colors"
                 >
-                  <td className="px-5 font-mono text-sm text-blue">#{t.id}</td>
+                  <td className="px-5 font-mono text-sm text-blue">{t.ticketNumber ?? t.id}</td>
                   <td className="px-5 text-[13px] text-text-primary max-w-[260px] truncate">{t.subject}</td>
                   <td className="px-5 text-xs text-text-secondary">{t.clientName}</td>
                   <td className="px-5"><StatusBadge status={t.status} /></td>

@@ -137,7 +137,7 @@ export default function ClientDetailPage() {
                   <motion.div key={t.id as string} whileHover={{ backgroundColor: "rgba(232,240,250,0.4)" }}
                     onClick={() => setSelectedTicket(t as unknown as Ticket)} className="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-colors">
                     <div className="min-w-0">
-                      <span className="font-mono text-xs text-blue">#{t.id}</span>
+                      <span className="font-mono text-xs text-blue">{t.ticketNumber ?? t.id}</span>
                       <p className="text-sm text-text-primary truncate">{t.subject}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-3">
@@ -190,7 +190,7 @@ export default function ClientDetailPage() {
                 {clientTickets.map((t) => (
                   <motion.tr key={t.id as string} whileHover={{ backgroundColor: "rgba(232,240,250,0.4)" }}
                     onClick={() => setSelectedTicket(t as unknown as Ticket)} className="border-b border-ice last:border-0 cursor-pointer">
-                    <td className="py-3 pr-4"><span className="font-mono text-sm text-blue">#{t.id}</span></td>
+                    <td className="py-3 pr-4"><span className="font-mono text-sm text-blue">{t.ticketNumber ?? t.id}</span></td>
                     <td className="py-3 pr-4 text-sm text-text-primary max-w-[220px] truncate">{t.subject}</td>
                     <td className="py-3 pr-4"><StatusBadge status={t.status} /></td>
                     <td className="py-3 pr-4"><PriorityIndicator priority={t.priority} /></td>
