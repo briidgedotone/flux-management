@@ -31,8 +31,8 @@ function stripHtml(html: string): string {
     .replace(/[ \t]+/g, " ")
     // Remove lines that are only whitespace
     .replace(/^\s+$/gm, "")
-    // Collapse multiple blank lines into one
-    .replace(/\n{3,}/g, "\n\n")
+    // Collapse any multiple newlines into single newline
+    .replace(/\n{2,}/g, "\n")
     // Trim whitespace
     .trim();
 }
