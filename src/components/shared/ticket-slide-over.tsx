@@ -13,6 +13,8 @@ function stripHtml(html: string): string {
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
     // Remove CSS blocks (inline style declarations at the top of Atera descriptions)
     .replace(/[a-z,\s]+\{[^}]*\}/gi, "")
+    // Remove CSS selector lines (e.g., "p, strong, em, ul, ol, li, img, h1, h2, h3...")
+    .replace(/^[\s]*[a-z][a-z0-9,\s]*(?:,\s*[a-z][a-z0-9]*)+\s*$/gim, "")
     // Replace common block tags with newlines
     .replace(/<\/(p|div|br|tr|li|h[1-6])>/gi, "\n")
     .replace(/<br\s*\/?>/gi, "\n")
