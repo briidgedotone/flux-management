@@ -27,8 +27,12 @@ function stripHtml(html: string): string {
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&nbsp;/g, " ")
-    // Collapse multiple blank lines into single newline
-    .replace(/\n{2,}/g, "\n")
+    // Collapse runs of spaces/tabs on a single line
+    .replace(/[ \t]+/g, " ")
+    // Remove lines that are only whitespace
+    .replace(/^\s+$/gm, "")
+    // Collapse multiple blank lines into one
+    .replace(/\n{3,}/g, "\n\n")
     // Trim whitespace
     .trim();
 }
