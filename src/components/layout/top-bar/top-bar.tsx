@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useSidebarStore } from "@/stores/sidebar-store";
+import { useAuth } from "@/hooks/use-auth";
 import { useNotificationStore } from "@/stores/notification-store";
 import {
   MagnifyingGlassIcon,
@@ -31,6 +32,9 @@ export function TopBar({ onSearchClick, onNotificationClick, onUserClick }: TopB
   const pathname = usePathname();
   const { setMobileOpen } = useSidebarStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const { data: auth } = useAuth();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userInitials = ((auth as any)?.name ?? "").split(" ").map((n: string) => n[0]).join("").toUpperCase() || "?";
 
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbs = segments.map((seg, i) => {
@@ -107,7 +111,7 @@ export function TopBar({ onSearchClick, onNotificationClick, onUserClick }: TopB
           onClick={onUserClick}
           className="flex items-center justify-center w-[34px] h-[34px] rounded-full bg-navy-80 text-white text-xs font-medium hover:ring-2 hover:ring-blue-10 transition-all duration-150"
         >
-          AR
+          {userInitials}
         </button>
       </div>
     </header>

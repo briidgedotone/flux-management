@@ -262,7 +262,11 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
+          <div className="flex flex-col items-center justify-center h-[220px] text-center">
+            <p className="text-sm text-text-muted">Ticket activity chart will appear once chart data is synced.</p>
+            <p className="text-xs text-text-muted mt-1">{d ? `${d.tickets.createdLast30d} created, ${d.tickets.resolvedLast30d} resolved in the last 30 days` : ""}</p>
+          </div>
+          {false && <ResponsiveContainer width="100%" height={220}>
             <ComposedChart data={[]} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#ECEEF2" vertical={false} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
@@ -280,7 +284,7 @@ export default function DashboardPage() {
               <Bar dataKey="closed" stackId="tickets" fill="#0D7C5F" radius={[2, 2, 0, 0]} barSize={24} />
               <Line type="monotone" dataKey="total" stroke="#15549D" strokeWidth={2} dot={false} />
             </ComposedChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
 
         {/* Projects by Status - 1 col */}

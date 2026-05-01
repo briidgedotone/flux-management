@@ -49,7 +49,7 @@ const reportTypes = [
     iconColor: "text-blue",
     href: "/reports/sla-compliance",
     stat: "—",
-    statLabel: "Compliance rate",
+    statLabel: "Resolution rate",
     accentColor: "#1A6BC4",
     secondaryIcon: TargetIcon,
   },
@@ -93,6 +93,9 @@ export default function ReportsPage() {
   if (d) {
     dynamicStats["/reports/revenue"] = `$${(d.revenue.totalMonthly / 1000).toFixed(1)}K`;
     dynamicStats["/reports/team-performance"] = `${d.team.avgUtilization}%`;
+    dynamicStats["/reports/sla-compliance"] = d.tickets.createdLast30d > 0
+      ? `${Math.round((d.tickets.resolvedLast30d / d.tickets.createdLast30d) * 100)}%`
+      : "—";
     dynamicStats["/reports/ticket-analytics"] = `${d.tickets.avgResolutionHours.toFixed(1)}h`;
   }
 

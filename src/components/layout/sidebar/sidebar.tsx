@@ -1,6 +1,7 @@
 "use client";
 
 import { useSidebarStore } from "@/stores/sidebar-store";
+import { useAuth } from "@/hooks/use-auth";
 import { SidebarNavItem } from "./sidebar-nav-item";
 import {
   SquaresFourIcon,
@@ -36,7 +37,11 @@ const supportNav = [
 
 export function Sidebar() {
   const { isExpanded, isMobileOpen, setMobileOpen, toggleExpanded } = useSidebarStore();
+  const { data: auth } = useAuth();
   const showLabels = isExpanded || isMobileOpen;
+  const userName = (auth as any)?.name ?? "User";
+  const userRole = (auth as any)?.role ?? "";
+  const userInitials = userName.split(" ").map((n: string) => n[0]).join("").toUpperCase();
 
   return (
     <TooltipProvider>
@@ -157,15 +162,15 @@ export function Sidebar() {
         >
           <div className="w-8 h-8 rounded-full bg-navy-80 flex items-center justify-center flex-shrink-0">
             <span className="font-[family-name:var(--font-aptos)] font-semibold text-xs text-white">
-              AR
+              {userInitials}
             </span>
           </div>
           {showLabels && (
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-[13px] font-medium text-white truncate">
-                Alex Rivera
+                {userName}
               </span>
-              <span className="text-[11px] text-text-on-dark-muted truncate">Co-CEO</span>
+              <span className="text-[11px] text-text-on-dark-muted truncate capitalize">{userRole.replace("-", " ")}</span>
             </div>
           )}
           {showLabels && (
