@@ -1,931 +1,469 @@
-# Flux Management Portal — Implementation Plan
+# Flux Management Portal — Implementation Plan (PRD-Aligned)
 
-> **This is the single source of truth for implementation progress.**
-> After completing each step, mark it as `✅ DONE` in this file.
-> Before starting work, check which step is next. Never skip steps.
+> **Single source of truth for implementation progress.**
+> **Anchored to:** `PRD (Flux Build).pdf` by Brandon Devier (11/25/2025)
+> **Previous plan:** `implementation-plan-old.md` (based on `backend-plan.md` — our internal doc, NOT the PRD)
+> **Created:** May 2, 2026
 >
-> **Reference docs:**
-> - `backend-plan.md` (abbreviated as **BP**) — Architecture, schema, API routes, integrations
-> - `security-and-operations.md` (abbreviated as **SO**) — Security rules, access control, audit logging
-> - `external-api-safety.md` (abbreviated as **EA**) — External API interaction rules
-> - `testing-plan.md` (abbreviated as **TP**) — Test strategy, test org, verification checklists
+> This plan tracks ONLY what Brandon's PRD asked for.
+> Features we built that weren't in the PRD are tracked separately in the Scope Creep section.
 
 ---
 
-## Rules — Read Before Every Session
+## PRD Reference IDs
 
-> **These rules apply to EVERY step in this plan. Violating any of them can corrupt real client data, break security, or cause production incidents. Read this section at the start of every working session.**
-
-### Real Data Protection (The #1 Priority)
-
-The database contains real production data from Flux Technologies' clients (1,611+ tickets, real documents, real user accounts). This is a professional IT firm — their clients see this data.
-
-| # | Rule |
-|---|------|
-| R1 | **NEVER INSERT, UPDATE, or DELETE rows belonging to real organizations** — only the test org (`TEST_ORG_ID`) is writable in tests |
-| R2 | **NEVER reference real org IDs, user IDs, or emails in test code** — only use `TEST_*` constants from `test-constants.ts` |
-| R3 | **ALL test writes scoped to `TEST_ORG_ID`** (`00000000-0000-0000-0000-000000000099`) — the only safe write target |
-| R4 | **ALL test users use `@test.flux.internal` email domain** — makes test data instantly identifiable and cleanable |
-| R5 | **Use `assertTestOrg()` guard before every write in tests** — programmatic safety that throws if wrong org |
-| R6 | **NEVER use `TRUNCATE`** — always `DELETE WHERE organization_id = TEST_ORG_ID` scoped to test data |
-| R7 | **Test org has `is_active = false`** — production queries filter it out with `WHERE o.is_active = true` |
-| R8 | **Production seed script must NEVER contain test data** — test data belongs only in `src/__tests__/seed-test-data.ts`, never in `src/lib/db/seed.ts` |
-| R9 | **External APIs (Planner, Claude, Outlook) are MOCKED in tests** — never create real tasks, send real emails, or burn API credits |
-| R10 | **Cleanup runs before AND after every test suite** — catches leftover data from crashes or interrupted runs |
-
-### The `is_active` Filter (Applies to Every Cross-Org Query)
-
-| # | Rule |
-|---|------|
-| R11 | **Every query that aggregates across organizations MUST include `WHERE o.is_active = true`** — this is the mechanism that keeps test data invisible to real users |
-| R12 | **Applies to:** dashboard KPIs, client list, ticket stats, project stats, all 4 report types, AI context builder |
-| R13 | **Does NOT apply to:** single-resource lookups by ID, user-scoped queries, webhook endpoints |
-| R14 | **If you forget this filter on even one query, test data appears in real dashboards** |
-
-### Security (Every Line of Code)
-
-| # | Rule |
-|---|------|
-| R15 | **Parameterized SQL only** — `$1, $2` params. NEVER string concatenation. SQL injection is the #1 web vulnerability. |
-| R16 | **Validate ALL inputs with Zod schemas** — reject unexpected fields before they reach the database |
-| R17 | **No `SELECT *`** — always specify columns. Future sensitive columns would be leaked silently. |
-| R18 | **Generic error messages only** — never expose table names, SQL errors, stack traces, or internal details |
-| R19 | **No `dangerouslySetInnerHTML`** — XSS vulnerability |
-| R20 | **Secrets in `.env.local` (dev) or Key Vault (prod) only** — never in code, comments, tests, or git history |
-| R21 | **NEVER log secrets, tokens, or full email addresses** — log aggregators are not secure |
-| R22 | **Review `git diff` before every commit** — last line of defense for leaked secrets |
-
-### Authentication & Authorization
-
-| # | Rule |
-|---|------|
-| R23 | **Every API route MUST have `withManagementAuth`** — no unauthenticated access, no exceptions |
-| R24 | **Sensitive routes MUST have `withRole(['co-ceo', 'director'])`** — employees cannot see revenue, reports, or edit clients/team |
-| R25 | **Client role is BLOCKED entirely** — `withManagementAuth` rejects users with role `client` |
-| R26 | **Cookie name: `flux-management-session`** — not `flux-session`. Prevents collision with client portal. |
-| R27 | **JWT has NO `organizationId`** — management users are cross-org. Org comes from URL params when needed. |
-| R28 | **Never trust org/user IDs from request body** — IDs for filtering come from URL params, IDs for auth come from JWT |
-
-### Audit Logging
-
-| # | Rule |
-|---|------|
-| R29 | **Every mutation (create, update, delete) MUST write to `activity_log`** — who did what, when, to which client's data |
-| R30 | **Read-only operations do NOT log** — too noisy, no audit value |
-| R31 | **Log entries must include:** `user_id`, `action`, `entity_type`, `entity_id`, `organization_id`, `description` |
-
-### External APIs
-
-| # | Rule |
-|---|------|
-| R32 | **Management portal never calls Atera or SharePoint directly** — data comes from sync jobs via shared DB tables |
-| R33 | **Planner writes are background and non-blocking** — DB write succeeds even if Planner API fails. Log error, don't throw. |
-| R34 | **Never modify Planner plans or buckets** — only individual tasks (create, update, delete) |
-| R35 | **Email failures are non-blocking** — log error, don't throw. Notifications are best-effort. |
-| R36 | **Claude context must NOT contain API keys, secrets, or test org data** |
-| R37 | **AI responses include "Verify critical information" disclaimer** |
-
-### Database
-
-| # | Rule |
-|---|------|
-| R38 | **Shared database with client portal** — never create a separate DB for management |
-| R39 | **No RLS on management queries** — access control is middleware-only (`withManagementAuth`, `withRole`) |
-| R40 | **Existing client portal tables are NEVER modified** — only add new tables via new migrations |
-| R41 | **Never modify applied migrations** — create new ones. Applied migrations are immutable history. |
-| R42 | **Query modules are the ONLY way to access the database** — no raw SQL in route handlers |
-| R43 | **All IDs are UUIDs, all timestamps are `TIMESTAMPTZ`** — consistency with client portal |
-
-### API Response Format
-
-| # | Rule |
-|---|------|
-| R44 | **Success:** `{ data: T }` |
-| R45 | **Error:** `{ error: { code: string, message: string } }` |
-| R46 | **Paginated:** `{ data: T[], total, page, limit, totalPages }` |
-| R47 | **Rate limits:** default 100/min, auth 10/min, AI 20/min, reports 30/min, webhook 10/min |
-
-### Commit Convention
-
-| # | Rule |
-|---|------|
-| R48 | **Format:** `type(scope): short description` — single line only, no multi-line bodies, no Co-Authored-By |
-| R49 | **Types:** `feat`, `fix`, `chore`, `refactor`, `docs`, `test`, `security` |
-| R50 | **Scopes:** `auth`, `db`, `api`, `sync`, `ai`, `ui`, `infra`, `deps` |
-| R51 | **Each commit must leave the app buildable** — never commit broken code |
-| R52 | **Never commit `.env.local`, `node_modules`, `.next`** |
-| R53 | **Commit after EVERY step/substep** — each step gets its own commit. Don't batch multiple steps into one commit. This keeps git history clean and makes rollbacks granular. |
-
-### Testing
-
-| # | Rule |
-|---|------|
-| R54 | **Every step verified before moving to the next** — no skipping |
-| R55 | **Every phase has a checklist** — pass it all before proceeding |
-| R56 | **`npm test` run twice consecutively must both pass** — no state leakage between runs |
-| R57 | **New tables must be added to cleanup function** in correct FK order |
-| R58 | **PR review must verify:** test data scoped, cleanup updated, no real IDs, guards used |
-
-### Azure Naming Convention (From Brandon)
-
-| # | Rule |
-|---|------|
-| R59 | **Pattern:** `[org]-[workload]-[environment]-[resourcetype]` |
-| R60 | **Environments:** `dev`, `stg`, `prod` |
-| R61 | **Example:** `flux-management-prod-app`, `flux-management-prod-rg` |
-| R62 | **Storage accounts:** no hyphens, 24-char max (e.g., `fluxmanagementprodst`) |
-
-### Things That Are Easy to Forget
-
-| # | What | What Goes Wrong |
-|---|------|-----------------|
-| R63 | Forgetting `is_active = true` on a new aggregate query | Test org data appears in real dashboards/reports |
-| R64 | Using `organization_id` from request body instead of URL param | Client could send a fake org ID |
-| R65 | Forgetting `withRole` on a new sensitive endpoint | Employees see revenue or delete other people's tasks |
-| R66 | Forgetting `logActivity()` on a new mutation | Missing audit trail — compliance gap |
-| R67 | Adding a new table but not updating cleanup function | Test data orphaned permanently in production DB |
-| R68 | Using `flux-session` cookie name | Cookie collision with client portal — unpredictable auth failures |
-| R69 | Putting test data in `src/lib/db/seed.ts` | Test org gets created in production deployment |
-| R70 | Calling real Planner/Claude API in tests | Creates real tasks in client's Planner, burns API credits |
-| R71 | Using `SELECT *` in a "quick" query | Future sensitive columns leaked to frontend |
-| R72 | Returning detailed error messages during debugging and forgetting to revert | Internal table names/SQL exposed to browser |
-
-### Quick Reference: Before You Write Code
-
-```
-Before writing a query:
-  □ Parameterized SQL? ($1, $2, never concatenation)
-  □ Specific columns? (no SELECT *)
-  □ Cross-org? → add WHERE o.is_active = true
-  □ Writing data? → add logActivity() call
-
-Before writing an API route:
-  □ withManagementAuth wrapper?
-  □ Sensitive? → withRole(['co-ceo', 'director'])
-  □ Zod validation on inputs?
-  □ Generic error messages?
-  □ Rate limit applied?
-
-Before writing a test:
-  □ Using TEST_ORG_ID? (never a real org)
-  □ Using test user IDs? (never real users)
-  □ assertTestOrg() guard on writes?
-  □ External APIs mocked?
-  □ New table? → update cleanup.ts
-
-Before committing (commit after EVERY step):
-  □ git diff reviewed?
-  □ No secrets in diff?
-  □ Build passes?
-  □ Commit message matches the suggested message for this step?
-  □ Single line, no Co-Authored-By?
-  □ Step marked ✅ DONE in this plan?
-```
+Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit.md`):
+- **M1-M13** = Management Portal feature requirements (PRD §3.1)
+- **W1-W18** = Workflow steps (PRD §3.2)
+- **D1-D9** = Data requirements (PRD §4)
+- **K1-K5** = KPIs (PRD §4.3)
+- **R1-R5** = Reports (PRD §4.3)
+- **I1-I6** = Integrations (PRD §5)
+- **A1-A11** = AI requirements (PRD §6)
+- **U1-U14** = UX requirements (PRD §7)
+- **T1-T12** = Technical requirements (PRD §8)
+- **AC1-AC9** = Acceptance criteria (PRD §9)
 
 ---
 
-## Phase 0 — Pre-Implementation Setup
+## Phase 1 — Infrastructure (Foundation)
 
-### Step 0.1: Create implementation branch ✅ DONE
-> Ref: BP §1 (Architecture Overview)
-> Commit: _(no commit — branch creation only)_
-> Phase Strategy: Can build now — local git operation
+### Step 1.1: Project setup ✅ DONE
+- [x] Next.js 16 project, dependencies, env template, folder structure
+- [x] TypeScript, Tailwind v4, shadcn/ui, Phosphor Icons
 
-- [x] Create `feat/backend-implementation` branch from `main`
-- [x] Push branch to remote
+### Step 1.2: Database connection ✅ DONE
+- [x] PostgreSQL pool (shared with client portal, no RLS)
+- [x] Cross-org queries (management users have `organization_id = NULL`)
 
-### Step 0.2: Install backend dependencies ✅ DONE
-> Ref: BP §2 (Azure Infrastructure — Environment Variables)
-> Commit: `chore(deps): add backend dependencies for Azure, PostgreSQL, Graph API, and Claude`
-> Files: `package.json`, `package-lock.json`
-> Phase Strategy: Can build now — npm install, no external APIs
+### Step 1.3: Database migrations ✅ DONE
+- [x] Migration 005: 7 management tables
+- [x] Migration 006: Extended user role constraint (added `co-ceo`)
 
-- [x] Install production dependencies:
-  ```bash
-  npm install pg jose @anthropic-ai/sdk @microsoft/microsoft-graph-client @azure/identity @azure/keyvault-secrets
-  ```
-- [x] Install dev dependencies:
-  ```bash
-  npm install -D @types/pg vitest dotenv
-  ```
-- [x] Note: `vitest` is needed for test runner, `dotenv` for loading env vars in scripts
-- [x] Verify `zod` is already installed (check `package.json`)
-- [x] `pg` — PostgreSQL client
-- [x] `@types/pg` — TypeScript types for pg
-- [x] `jose` — JWT creation/verification → BP §3 (Auth — JWT Payload)
-- [x] `@anthropic-ai/sdk` — Claude API client → BP §7 (AI Assistant), EA §Claude API
-- [x] `@microsoft/microsoft-graph-client` — Graph API client → BP §6 (Integration Details)
-- [x] `@azure/identity` — Azure authentication → BP §3 (Auth — Azure AD Setup)
-- [x] `@azure/keyvault-secrets` — Secret management → SO §8 (Secrets Management)
-- [x] Run `npm audit` — 8 vulnerabilities found, all fixed with `npm audit fix`, 0 remaining
-- [x] Verify build still passes: `npm run build`
+### Step 1.4: Test infrastructure ✅ DONE
+- [x] Test org (`is_active = false`), test users, seed/cleanup, guards
+- [x] Vitest config, 154 tests passing
 
-### Step 0.3: Create `.env.local` template ✅ DONE
-> Ref: BP §2 (Azure Infrastructure — Environment Variables), SO §8 (Secrets Management)
-> Commit: `chore(infra): add environment variable template and .env.example`
-> Files: `.env.example`
-> DO NOT commit `.env.local`
-> Phase Strategy: Can build now — local config only
-
-- [x] Create `.env.example` with all required variables (see BP §2) — **empty values only, no real secrets**
-  - Document which values are **shared** with client portal: `DATABASE_URL`, `ATERA_API_KEY`, `ANTHROPIC_API_KEY`, `AZURE_AD_TENANT_ID`, `AZURE_KEY_VAULT_URL`
-  - Document which values are **management-specific**: `AZURE_AD_CLIENT_ID`, `AZURE_AD_CLIENT_SECRET`, `AZURE_AD_REDIRECT_URI`, `JWT_SECRET`, `CONTACT_WEBHOOK_SECRET`, `NEXT_PUBLIC_APP_URL`
-- [x] Create `.env.local` with development values (gitignored)
-- [x] Update `package.json` dev script to use port 3001 (avoids conflict with client portal on 3000):
-  ```json
-  "dev": "next dev -p 3001"
-  ```
-- [x] Verify `.env.local` is in `.gitignore` → SO §8 rule: `.env.local` is gitignored, never committed
-- [x] Verify `.env.example` has no real secrets — only placeholder/default values
-
-### Step 0.4: Scaffold backend folder structure ✅ DONE
-> Ref: BP §12 (Folder Structure)
-> Commit: `chore(infra): scaffold backend folder structure with placeholder files`
-> Files: all new directories and placeholder `.ts` files
-> Phase Strategy: Can build now — empty file creation only
-
-**Placeholder file convention:** Every placeholder file contains:
-```typescript
-// TODO: Implement — see docs/implementation-plan.md
-export {};
-```
-
-- [x] Create `src/lib/db/client.ts` (placeholder)
-- [x] Create `src/lib/db/migrations/` directory
-- [x] Create `src/lib/db/queries/` with placeholders: `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`, `reports.ts`, `ai.ts`, `notifications.ts`, `contact-submissions.ts`, `activity-log.ts`, `report-snapshots.ts`
-- [x] Create `src/lib/auth/` with placeholders: `azure-ad.ts`, `session.ts`, `middleware.ts`
-- [x] Create `src/lib/integrations/graph/planner-write.ts` (placeholder)
-- [x] Create `src/lib/integrations/claude/` with placeholders: `client.ts`, `context-builder.ts`, `system-prompt.ts`
-- [x] Create `src/lib/integrations/mail/sender.ts` (placeholder)
-- [x] Create `src/lib/api/` with placeholders: `client.ts`, `response.ts`, `rate-limit.ts`, `query-client.ts`
-- [x] Create `src/lib/validators/` with placeholders: `clients.ts`, `tickets.ts`, `projects.ts`, `team.ts`, `reports.ts`, `ai.ts`, `notifications.ts`, `contact-submissions.ts`, `settings.ts`
-- [x] Create `src/hooks/` directory (already exists)
-- [x] Create `src/__tests__/` directory with subdirectories: `phase-1/`, `phase-2/`, `phase-3/`, `phase-4/`, `phase-5/`, `phase-7/`, `integration/`
-- [x] Verify build passes: `npm run build`
-
-### Step 0.5: Consolidate and extend types ✅ DONE
-> Ref: BP §4 (Database Schema — New Tables), BP §5 (API Routes — Response Format)
-> Commit: `refactor(types): consolidate types into src/types and add management-specific types`
-> Files: `src/types/index.ts`, `src/data/types.ts`
-> Phase Strategy: Can build now — TypeScript refactor only
-
-- [x] Move types from `src/data/types.ts` to `src/types/index.ts`
-- [x] Add backend types: `AuthUser`, `RequestContext`, `ApiResponse`, `PaginatedResponse` → BP §5 (API Response Format)
-- [x] Add management-specific types: `ClientProfile`, `TeamMemberProfile`, `ContactFormSubmission`, `ReportSnapshot`, `ConnectorName`, `ConnectorStatusValue`, `SyncResult` → BP §4
-- [x] Re-export from `src/data/types.ts` for backwards compatibility (15 existing imports unaffected)
-- [x] Verify build passes + `tsc --noEmit` zero errors
-
-### Step 0.6: Set up test infrastructure ✅ DONE
-> Ref: BP §10 (Test Strategy — all sections), SO §11 (Test Data Isolation — all 13 rules)
-> **This step establishes the safety framework for all subsequent testing. Do not skip.**
-> Commit: `test(infra): add test org, seed data, cleanup, and safety guards`
-> Files: `src/__tests__/test-constants.ts`, `src/__tests__/seed-test-data.ts`, `src/__tests__/cleanup.ts`, `src/__tests__/guards.ts`, `src/__tests__/setup.ts`, `src/__tests__/teardown.ts`, `vitest.config.ts`, `package.json`
-> Phase Strategy: Can build now — local DB write to test org only
-
-- [x] Create `src/__tests__/test-constants.ts` — 6 constants + TEST_USER_IDS array
-- [x] Create `src/__tests__/seed-test-data.ts` — test org (is_active=false), 4 users, 5 tickets, 2 projects. All idempotent.
-- [x] Create `src/__tests__/cleanup.ts` — FK-ordered cleanup across all 22 tables. Scoped by TEST_ORG_ID + TEST_EMAIL_DOMAIN.
-- [x] Create `src/__tests__/guards.ts` — assertTestOrg(), assertTestUser(), assertTestEmail()
-- [x] Create `src/__tests__/setup.ts` — Global setup: cleanup → seed
-- [x] Create `src/__tests__/teardown.ts` — Global teardown: cleanup
-- [x] Create `vitest.config.ts` — global setup, dotenv loading, path alias
-- [x] Add npm scripts: `test`, `test:watch`, `test:seed`, `test:cleanup`
-- [ ] **Pending manual verification:** Run `npm run test:seed` once DATABASE_URL is configured with real credentials
+### Step 1.5: UUID migration ✅ DONE
+- [x] Replaced all predictable seed IDs with random UUIDs
 
 ---
 
-## Phase 1 — Database Foundation
+## Phase 2 — Authentication (PRD §7.1, W1-W3, U1-U4, T4-T5, AC3)
 
-### Step 1.1: PostgreSQL connection client ✅ DONE
-> Ref: BP §1 (Architecture — Core Principles: "Cross-org access"), BP §4 (Database Schema — Database Connection), SO §2 (Data Access Model)
-> Commit: `feat(db): add PostgreSQL connection pool without org scoping`
-> Files: `src/lib/db/client.ts`
-> Phase Strategy: Can build now — uses existing local PostgreSQL
+> PRD: "Secure login via username + password", "SSO using Microsoft accounts", "Role-based access control"
 
-- [x] Create `src/lib/db/client.ts` — Pool (max 20, 10s timeout, 30s idle, SSL in prod)
-- [x] Configure connection pool using `DATABASE_URL` env var
-- [x] **No `withOrgScope()` wrapper** — management portal queries are cross-org
-- [x] Add connection error handling (`pool.on("error")`)
-- [x] Test connection — verified: `SELECT 1` works, 4 organizations visible (3 real + 1 test)
-
-### Step 1.2: Write migration `005_management_tables.sql` ✅ DONE
-> Commit: `feat(db): add management tables migration with 7 new tables`
-> Files: `src/lib/db/migrations/005_management_tables.sql`
-
-- [x] Created 7 tables: `client_profiles`, `team_members`, `internal_notes`, `activity_log`, `report_snapshots`, `contact_form_submissions`, `management_notifications`
-- [x] All indexes, BEGIN/COMMIT transaction, CREATE TABLE IF NOT EXISTS
-
-### Step 1.3: Write migration `006_extend_user_roles.sql` ✅ DONE
-> Commit: `feat(db): extend user role constraint to include co-ceo`
-> Files: `src/lib/db/migrations/006_extend_user_roles.sql`
-
-- [x] Dropped and recreated `users_role_check` constraint to include `co-ceo`
-
-### Step 1.4: Write production seed script ✅ DONE
-> Commit: `feat(db): add migration runner and production seed with management users`
-> Files: `src/lib/db/seed.ts`, `src/lib/db/migrate.ts`, `package.json`
-
-- [x] Production seed: client_profiles (Armada, OnPoint), team_members (Brandon, Zack, Cameron)
-- [x] Migration runner using shared `_migrations` table (only runs 005-006)
-- [x] User role updates commented out — awaiting Brandon's confirmation
-- [x] Zero test data in production seed (SO §11 Rule 12 verified)
-
-### Step 1.5: Verify test infrastructure against new tables ✅ DONE
-> Commit: `test(db): update test seed and cleanup for management tables`
-
-- [x] Test seed covers all 7 management tables
-- [x] Cleanup removes all test data, real seed data intact
-
-### Step 1.6: Verify client portal still works ✅ DONE
-> Verification only — no commit
-
-- [x] Client portal `npm run build` passes (30+ API routes, 8 portal pages)
-- [x] Management portal `npm run build` passes
-- [x] Migrations 005-006 did not break client portal
-- [ ] Verify no errors in browser console related to database schema
-- [ ] Stop the client portal
-- [ ] This confirms migrations 005-006 did not break the existing client portal
-
----
-
-## Phase 2 — Authentication
-
-### Step 2.1: Azure AD configuration helper ✅ DONE
-> Ref: BP §3 (Auth — Azure AD Setup, Auth Flow steps 1-4), SO §3 (Authentication Security — Separate App Registration)
-> Commit: `feat(auth): add Azure AD OAuth2 configuration and helpers`
-> Files: `src/lib/auth/azure-ad.ts`
-> Phase Strategy: Code written using client portal as reference. Testing requires Azure AD app registration from Brandon.
-
-- [x] Create `src/lib/auth/azure-ad.ts`
-- [x] Configure for management app registration (`flux-management-dev`) → BP §3 (Azure AD Setup: app name, redirect URI, permissions)
-- [x] OAuth2 authorization URL builder with PKCE → BP §3 (Auth Flow step 1-2)
-- [x] Token exchange function → BP §3 (Auth Flow step 4)
-- [x] ID token validation (signature, issuer, audience, nonce) → BP §3 (Auth Flow step 4)
+### Step 2.1: Azure AD OAuth2 ✅ DONE
+- [x] Azure AD app registration (`flux-management-dev`)
+- [x] OAuth2 + PKCE flow, ID token validation
+- [x] SSO tested and working
+> Fulfills: U1, U4, W3, AC3
 
 ### Step 2.2: JWT session management ✅ DONE
-> Ref: BP §3 (Auth — JWT Payload, Cookie Configuration), SO §3 (Cookie Isolation)
-> Commit: `feat(auth): add JWT session management with management-specific cookie`
-> Files: `src/lib/auth/session.ts`
-
-- [x] Create `src/lib/auth/session.ts`
-- [x] JWT creation with payload: `userId`, `email`, `name`, `role` (no `organizationId`) → BP §3 (JWT Payload)
-- [x] JWT verification function
-- [x] Cookie name: `flux-management-session` → BP §3 (Cookie Configuration), SO §3 (Cookie Isolation)
-- [x] Cookie config: HTTP-only, Secure, SameSite=Lax, 24h expiry → BP §3 (Cookie Configuration)
-- [x] Session revocation via in-memory JTI set
+- [x] `flux-management-session` cookie (no org ID)
+- [x] 24h expiry, HTTP-only, Secure, SameSite=Lax
 
 ### Step 2.3: Auth middleware ✅ DONE
-> Ref: BP §3 (Auth — Middleware), BP §5 (API Routes — Route Handler Pattern), SO §4 (Role-Based Access Control — Enforcement Pattern)
-> Commit: `feat(auth): add withManagementAuth and withRole middleware`
-> Files: `src/lib/auth/middleware.ts`
-
-- [x] Create `src/lib/auth/middleware.ts`
-- [x] `withManagementAuth(request, handler)` — extract JWT, verify, lookup user, pass context → BP §3 (Middleware — withManagementAuth)
-- [x] `withRole(request, allowedRoles, handler)` — restrict by role → BP §3 (Middleware — withRole), SO §4 (Sensitive Endpoints list)
-- [x] `withWebhookAuth(request, handler)` — API key auth for contact form webhook
-- [x] Return 401 for missing/invalid token, 403 for insufficient role → BP §3 (Auth — Role Verification)
-- [x] Reject users with `client` role → SO §3 (Role Verification: "If user role is client, access is denied")
-- [x] Also implemented prerequisites: `src/lib/api/response.ts`, `src/lib/api/rate-limit.ts`, `src/lib/db/queries/users.ts`
+- [x] `withManagementAuth` — verifies JWT, looks up user, rejects `client` role
+- [x] `withRole` — restricts sensitive routes to co-ceo/director
+- [x] Rate limiting on all routes
+> Fulfills: U2, W7, T4
 
 ### Step 2.4: Auth API routes ✅ DONE
-> Ref: BP §5 (API Routes — Auth Routes), BP §3 (Auth Flow steps 1-8)
-> Commit: `feat(auth): add login, callback, logout, me, and dev-login API routes`
-> Files: `src/app/api/auth/login/route.ts`, `src/app/api/auth/callback/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`, `src/app/api/auth/dev-login/route.ts`
+- [x] Login, callback, logout, me, dev-login
+- [x] Security headers (HSTS, X-Frame-Options, CSP, etc.)
 
-- [x] `GET /api/auth/login` — Initiate Azure AD OAuth2 flow → BP §3 (Auth Flow steps 1-2)
-- [x] `GET /api/auth/callback` — Exchange code, validate tokens, create session → BP §3 (Auth Flow steps 3-8)
-- [x] `GET /api/auth/logout` — Revoke JTI, clear session cookie
-- [x] `GET /api/auth/me` — Return current user info (no organizationId)
-- [x] `GET /api/auth/dev-login` — Dev-only bypass (ENABLE_TEST_LOGIN=true), rejects client role
-- [x] Callback rejects `client` role users at login time [R25]
-- [x] All routes use port 3001 default URL
+### Step 2.5: Route protection ✅ DONE
+- [x] Next.js middleware redirects unauthenticated users to `/login`
+- [x] Login page wired to Azure AD SSO
 
-### Step 2.5: Security headers ✅ DONE
-> Ref: SO §1 (Security Inheritance — Security headers list), BP §9 (Security — Inherited from Client Portal)
-> Commit: `security(auth): add security headers to next.config.ts`
-> Files: `next.config.ts`
-
-- [x] Add security headers to `next.config.ts`:
-  - Strict-Transport-Security (max-age=63072000, includeSubDomains, preload)
-  - X-Content-Type-Options (nosniff)
-  - X-Frame-Options (DENY)
-  - Content-Security-Policy (default-src 'self', connect-src includes login.microsoftonline.com, frame-ancestors 'none')
-  - Referrer-Policy (strict-origin-when-cross-origin)
-
-### Step 2.6: Wire login page + route protection ✅ DONE
-> Ref: BP §3 (Auth Flow), SO §3 (Role Verification)
-> Commit: `feat(auth): wire login page to Azure AD and add route protection`
-> Files: `src/app/login/page.tsx`, `src/middleware.ts`
-
-- [x] Update login page — SSO button calls `/api/auth/login`, removed mock email/password form
-- [x] Add error message display for auth failures (auth_failed, access_denied, account_disabled, rate_limited)
-- [x] Add `src/middleware.ts` for route protection (redirect to `/login` if no `flux-management-session` cookie)
-- [x] Add dev-login bypass buttons for Brandon, Zack, Cameron (dev only)
-- [x] Wrapped `useSearchParams` in Suspense boundary (Next.js 16 requirement)
-- [x] Build verified — all routes compile, middleware active
+### Step 2.6: MFA ⚠️ PARTIAL
+- [x] Azure AD supports MFA natively
+- [ ] MFA not enforced via Conditional Access policy (needs Brandon to configure in Azure)
+> Fulfills: U3, T5 — partially
 
 ---
 
-## Phase 3 — Database Query Modules
+## Phase 3 — Atera Integration: IT Help Desk Tickets (PRD §3.1 M3, M7-M9, K1-K2)
 
-### Step 3.1: `clients.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Clients), BP §4 (Schema — `client_profiles` table, `organizations` table)
-> Security: SO §9 (parameterized SQL, no `SELECT *`), SO §5 (audit log on updates)
-> Commit: `feat(db): add client query module with cross-org list and is_active filter`
-> Files: `src/lib/db/queries/clients.ts`
-> Phase Strategy: Can build now — pure PostgreSQL, no external APIs
+> PRD MUST-HAVE: "Seamless integration with Atera to provide real-time IT Help Desk ticket data for each client"
 
-- [x] `listClients(filters)` — Join `organizations` + `client_profiles` + ticket/project counts + SLA %. **`WHERE o.is_active = true`** enforced (R11). Supports search, industry, healthScore, contractStatus, pagination, sorting.
-- [x] `getClient(clientId)` — Full client detail by org ID. No `is_active` filter on single lookup (R13).
-- [x] `updateClientProfile(clientId, data)` — Dynamic field update with parameterized SQL (R15). Returns updated row.
-- [x] `getClientStats(clientId, range)` — Ticket trends, resolution time, project progress over 7d/30d/90d.
-- [x] Tests: 12 tests in `src/__tests__/phase-3/clients.test.ts` — all pass, R56 verified (two consecutive runs).
+### Step 3.1: Ticket data from Atera ✅ DONE
+- [x] Client portal syncs Atera every 5 min → writes to shared `tickets` table
+- [x] Management portal reads from shared DB (no direct Atera calls)
+- [x] 1,794 tickets synced across all clients
+> Fulfills: M3, M7, D1, D6, I1, A1, AC2
 
-### Step 3.2: `tickets.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Tickets), BP §4 (Schema — shared `tickets`, `ticket_activities`, `ticket_attachments` tables + new `internal_notes`)
-> Security: SO §9 (parameterized SQL, no `SELECT *`), SO §5 (audit log on note creation)
-> Commit: `feat(db): add ticket query module with cross-org list and internal notes`
-> Files: `src/lib/db/queries/tickets.ts`
+### Step 3.2: Ticket query module ✅ DONE
+- [x] `listTickets()` — cross-org, paginated, filterable by status/priority/client/assignee
+- [x] `getTicket()` — detail with activities, attachments, internal notes
+- [x] `getTicketStats()` — open/pending/closed/critical counts, avg resolution
+- [x] All queries include `WHERE o.is_active = true`
+> Fulfills: M8 (status)
 
-- [x] `listTickets(filters)` — Cross-org with pagination, status/priority/client/assignee/search filters. `WHERE o.is_active = true` enforced (R11). Returns `clientId`/`clientName` per ticket.
-- [x] `getTicket(ticketId)` — Detail with activities, attachments, and internal notes (management-only). No `is_active` filter (R13).
-- [x] `getTicketStats(filters)` — Cross-client metrics: open/pending/closed/critical counts, avg resolution. `is_active` filter enforced (R11). Supports `clientId` and `range`.
-- [x] `getTicketChartData(clientId, range)` — Daily created/resolved counts via `generate_series`.
-- [x] `addInternalNote(ticketId, authorId, content)` — Insert into `internal_notes` table.
-- [x] Tests: 12 tests in `src/__tests__/phase-3/tickets.test.ts` — all pass.
+### Step 3.3: Tickets page ✅ DONE
+- [x] Table with ticket #, subject, client, status, priority, assigned to, updated
+- [x] Filters: status, priority, search
+- [x] Pagination (10 per page)
+- [x] Click row → ticket slide-over with full detail
+- [x] HTML description stripping for Atera email thread content
 
-### Step 3.3: `projects.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Projects), BP §4 (Schema — shared `projects`, `project_tasks` tables), BP §6 (Integration — Task Write-Back)
-> Security: SO §5 (audit log on task CRUD), EA §Microsoft Graph API (Planner write rules)
-> Commit: `feat(db): add project query module with task CRUD operations`
-> Files: `src/lib/db/queries/projects.ts`
+### Step 3.4: Ticket status display on dashboard ✅ DONE
+- [x] Open tickets count, critical count, pending count
+- [x] Average resolution time (154h)
+> Fulfills: K1, K2
 
-- [x] `listProjects(filters)` — Cross-org with status/client/search filters, pagination, sorting. `WHERE o.is_active = true` enforced (R11).
-- [x] `getProject(projectId)` — Detail with tasks and assignees. No `is_active` filter (R13).
-- [x] `getProjectStats(filters)` — Cross-client summary: on-track/at-risk/delayed, avg progress, task totals. `is_active` filter enforced (R11).
-- [x] `createTask(projectId, orgId, data)` — Insert into `project_tasks` with generated `planner_task_id`.
-- [x] `updateTask(taskId, data)` — Dynamic field update. Sets `completed_at` when status is Complete.
-- [x] `deleteTask(taskId)` — Delete from `project_tasks`. Returns boolean.
-- [x] `getTaskById(taskId)` — For ownership checks in API layer.
-- [x] Tests: 13 tests in `src/__tests__/phase-3/projects.test.ts` — all pass.
+### Step 3.5: 30-day ticket trends ❌ NOT DONE
+- [ ] PRD asks for "visibility into rolling 30-day trends" (M8)
+- [ ] Need chart data endpoint that returns daily ticket open/closed counts for 30 days
+- [ ] Wire to dashboard chart area (currently shows empty state message)
+> Fulfills: M8
 
-### Step 3.4: `team.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Team), BP §4 (Schema — `team_members` table + shared `users` table)
-> Security: SO §4 (co-ceo/director only for updates), SO §5 (audit log on updates)
-> Commit: `feat(db): add team query module with computed metrics`
-> Files: `src/lib/db/queries/team.ts`
-
-- [x] `listTeamMembers()` — Join `users` + `team_members` + computed metrics (tickets resolved, active tasks, avg resolution hours).
-- [x] `getTeamMember(userId)` — Detail with performance metrics and profile info.
-- [x] `updateTeamMember(userId, data)` — Dynamic field update for capacity, utilization, department, status, hire date.
-- [x] Tests: 5 tests in `src/__tests__/phase-3/team.test.ts` — all pass.
-
-### Step 3.5: `reports.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Reports), BP §4 (Schema — `report_snapshots` for historical data, `client_profiles` for revenue)
-> Security: SO §4 (co-ceo/director only for all reports)
-> Commit: `feat(db): add report query module with revenue, SLA, team, and ticket analytics`
-> Files: `src/lib/db/queries/reports.ts`
-
-- [x] `getRevenueReport(range)` — Per-client revenue, totals. `is_active=true` enforced (R11).
-- [x] `getTeamPerformanceReport(range)` — Per-member tickets resolved, active tasks, avg resolution in range.
-- [x] `getSlaComplianceReport(range)` — Per-client SLA %, resolution times vs sla_target. `is_active=true` enforced (R11).
-- [x] `getTicketAnalyticsReport(clientId, range)` — Volume, priority breakdown, resolution times. `is_active=true` enforced (R11).
-- [x] Tests: 8 tests in `src/__tests__/phase-3/reports.test.ts` — all pass.
-
-### Step 3.6: `ai.ts` ✅ DONE
-> Ref: BP §5 (API Routes — AI Assistant), BP §7 (AI Assistant Architecture), BP §4 (Schema — shared `ai_conversations`, `ai_messages` tables)
-> Commit: `feat(db): add AI conversation and message query module`
-> Files: `src/lib/db/queries/ai.ts`
-
-- [x] `createConversation(userId, title)` — Uses first active org as context for management users (org_id=NULL).
-- [x] `listConversations(userId)` — Most recent first, limit 50.
-- [x] `getConversation(conversationId)` — With all messages in chronological order.
-- [x] `addMessage(conversationId, role, content, tokensUsed)` — Updates conversation timestamp.
-- [x] `deleteConversation(conversationId)` — CASCADE deletes messages.
-- [x] Tests: 6 tests in `src/__tests__/phase-3/ai.test.ts` — all pass.
-
-### Step 3.7: `notifications.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Notifications), BP §8 (Notification System — Types, Delivery Channels), BP §4 (Schema — `management_notifications` table)
-> Commit: `feat(db): add management notification query module`
-> Files: `src/lib/db/queries/notifications.ts`
-
-- [x] `listNotifications(userId, filters)` — Paginated, supports type filter, ordered by created_at DESC.
-- [x] `getUnreadCount(userId)` — Count of unread.
-- [x] `markAsRead(userId, notificationId?)` — Mark single or all as read.
-- [x] `createNotification(userId, data)` — Insert with type, title, description, link.
-- [x] Tests: 6 tests in `src/__tests__/phase-3/notifications.test.ts` — all pass.
-
-### Step 3.8: `contact-submissions.ts` ✅ DONE
-> Ref: BP §5 (API Routes — Contact Submissions), BP §4 (Schema — `contact_form_submissions` table), BP §6 (Integration — Contact Form Webhook)
-> Commit: `feat(db): add contact form submission query module`
-> Files: `src/lib/db/queries/contact-submissions.ts`
-
-- [x] `listSubmissions(filters)` — Paginated, supports status filter.
-- [x] `updateSubmissionStatus(id, status, reviewedBy)` — Updates status and reviewer.
-- [x] `createSubmission(data)` — Stores raw webhook data without modification.
-- [x] Tests: 5 tests in `src/__tests__/phase-3/contact-submissions.test.ts` — all pass.
-
-### Step 3.9: `activity-log.ts` ✅ DONE
-> Ref: BP §4 (Schema — `activity_log` table), SO §5 (Audit Logging — What Gets Logged, What Does NOT Get Logged, Retention)
-> Commit: `feat(db): add activity log query module for audit trail`
-> Files: `src/lib/db/queries/activity-log.ts`
-
-- [x] `logActivity(userId, action, entityType, entityId, orgId, description, metadata)` — Write audit entry with optional JSONB metadata.
-- [x] `listActivityLog(filters)` — By entityType, entityId, userId, organizationId, action. Paginated, joins user name/email.
-- [x] Tests: 6 tests in `src/__tests__/phase-3/activity-log.test.ts` — all pass.
-
-### Step 3.10: `connectors.ts` ✅ DONE
-> Ref: BP §4 (Schema — shared `connector_statuses` table)
-> Commit: `feat(db): add connector status query module`
-> Files: `src/lib/db/queries/connectors.ts`
-
-- [x] `listConnectorStatuses()` — All statuses across active orgs with `is_active=true` (R11). Includes client name.
-- [x] `getConnectorStatus(connectorName)` — Filter by connector name across active orgs.
-- [x] Tests: 3 tests in `src/__tests__/phase-3/connectors.test.ts` — all pass.
-
-### Step 3.11: `report-snapshots.ts` ✅ DONE
-> Ref: BP §4 (Schema — `report_snapshots` table)
-> Commit: `feat(db): add report snapshot query module for historical data`
-> Files: `src/lib/db/queries/report-snapshots.ts`
-
-- [x] `createSnapshot(reportType, period, periodDate, data)` — Idempotent via ON CONFLICT upsert.
-- [x] `listSnapshots(reportType, filters)` — By type and optional period, ordered by date DESC.
-- [x] `getLatestSnapshot(reportType, period)` — Most recent snapshot for cache/fallback.
-- [x] Tests: 6 tests in `src/__tests__/phase-3/report-snapshots.test.ts` — all pass.
+### Step 3.6: 7-day ticket activity chart ❌ NOT DONE
+- [ ] PRD asks for "ticket activity metrics, displayed on a 7-day rolling chart for actionable insights" (M9)
+- [ ] `getTicketChartData()` query module exists but returns data from `generate_series` — needs to be wired to the dashboard chart component
+- [ ] Replace the empty state message with actual Recharts visualization
+> Fulfills: M9
 
 ---
 
-## Phase 4 — API Routes
+## Phase 4 — Project Management Integration (PRD §3.1 M4, M10, W10-W14, K3)
 
-### Step 4.1: API response helpers + Zod validation schemas ✅ DONE
-> Ref: BP §5 (API Routes — API Response Format, Route Handler Pattern), SO §9 (API Security — Input Validation, Error Responses)
-> Commit: `feat(api): add Zod validation schemas for all API inputs`
-> Files: `src/lib/api/response.ts`, `src/lib/api/rate-limit.ts`, `src/lib/validators/*.ts`
+> PRD MUST-HAVE: "Project updates and timeline tracking, ensuring clients and management have up-to-date visibility on ongoing work"
 
-- [x] `src/lib/api/response.ts` — Already implemented in Step 2.3 (`successResponse`, `paginatedResponse`, `Errors.*`)
-- [x] `src/lib/api/rate-limit.ts` — Already implemented in Step 2.3 (AUTH, AI_CHAT, REPORTS, WEBHOOK, DEFAULT)
-- [x] Zod schemas created for all 9 domains:
-  - `clients.ts` — list, id, update, stats schemas
-  - `tickets.ts` — list, id, stats, internalNote, chartData schemas
-  - `projects.ts` — list, id, stats, createTask, updateTask, taskId schemas
-  - `team.ts` — memberId, update schemas
-  - `reports.ts` — reportRange, ticketAnalytics schemas
-  - `ai.ts` — chatMessage, conversationId schemas
-  - `notifications.ts` — list, markRead schemas
-  - `contact-submissions.ts` — list, id, update, webhookSubmission schemas
-  - `settings.ts` — profileUpdate schema
+### Step 4.1: Project data from Planner ✅ DONE
+- [x] Client portal syncs Planner every 15 min → writes to shared `projects`/`project_tasks` tables
+- [x] Management portal reads from shared DB
+- [x] 5 projects synced locally (13 on production)
+> Fulfills: M4, M10, D2, D7, I2, AC2
 
-### Step 4.2: Dashboard endpoint ✅ DONE
-> Ref: BP §5 (API Routes — Dashboard)
-> Commit: `feat(api): add dashboard endpoint with combined KPIs`
-> Files: `src/app/api/dashboard/route.ts`
+### Step 4.2: Project query module ✅ DONE
+- [x] `listProjects()` — cross-org, filterable, paginated
+- [x] `getProject()` — detail with tasks and assignees
+- [x] `getProjectStats()` — on-track/at-risk/delayed counts, avg progress
+- [x] Task CRUD: `createTask()`, `updateTask()`, `deleteTask()`
+> Fulfills: W11, W12, K3
 
-- [x] `GET /api/dashboard` — Combined KPIs: revenue, tickets (open/pending/closed/critical), projects (on-track/at-risk/delayed), client health, team utilization. All queries run in parallel. `is_active=true` enforced via query modules (R11).
-- [x] Wrapped with `withManagementAuth` (R23).
+### Step 4.3: Projects page ✅ DONE
+- [x] 3 view modes: Cards, List, Timeline (Gantt)
+- [x] KPI cards: Active Projects, Tasks Completed, On Track %
+- [x] Click project → detail page with tasks
+> Fulfills: M4
 
-### Step 4.3: Client endpoints ✅ DONE
-> Ref: BP §5 (API Routes — Clients), SO §4 (Sensitive Endpoints: PUT clients is co-ceo/director only)
-> Commit: `feat(api): add client list, detail, update, and stats endpoints`
-> Files: `src/app/api/clients/route.ts`, `src/app/api/clients/[id]/route.ts`, `src/app/api/clients/[id]/stats/route.ts`
+### Step 4.4: Task CRUD for employees ✅ DONE
+- [x] Create/update/delete tasks via API
+- [x] Employee: own tasks only. Co-CEO/Director: any task.
+- [x] Planner write-back built (background, non-blocking)
+- [ ] Planner write-back not tested in production (needs M365 Group IDs from Brandon)
+> Fulfills: W10-W14
 
-- [x] `GET /api/clients` — List with filters, pagination, Zod validation. `withManagementAuth`.
-- [x] `GET /api/clients/:id` — Detail. `withManagementAuth`.
-- [x] `PUT /api/clients/:id` — Update. `withRole(['co-ceo', 'director'])`. Audit log (R29).
-- [x] `GET /api/clients/:id/stats` — Client KPIs with range. `withManagementAuth`.
-
-### Step 4.4: Ticket endpoints ✅ DONE
-> Ref: BP §5 (API Routes — Tickets), SO §9 (parameterized SQL for filters)
-> Commit: `feat(api): add ticket list, detail, stats, and internal notes endpoints`
-> Files: `src/app/api/tickets/route.ts`, `src/app/api/tickets/[id]/route.ts`, `src/app/api/tickets/[id]/notes/route.ts`, `src/app/api/tickets/stats/route.ts`
-
-- [x] `GET /api/tickets` — List with filters + pagination. Zod validation. `withManagementAuth`.
-- [x] `GET /api/tickets/:id` — Detail with activities, attachments, internal notes. `withManagementAuth`.
-- [x] `POST /api/tickets/:id/notes` — Add internal note. `withManagementAuth`. Audit log (R29).
-- [x] `GET /api/tickets/stats` — Cross-client metrics with range/clientId. `withManagementAuth`.
-
-### Step 4.5: Project endpoints ✅ DONE
-> Ref: BP §5 (API Routes — Projects), BP §6 (Integration — Task Write-Back), EA §Microsoft Graph API (Planner write rules)
-> Commit: `feat(api): add project endpoints with task CRUD and dual-write support`
-> Files: `src/app/api/projects/route.ts`, `src/app/api/projects/[id]/route.ts`, `src/app/api/projects/[id]/stats/route.ts`, `src/app/api/projects/stats/route.ts`, `src/app/api/projects/[id]/tasks/route.ts`, `src/app/api/projects/[id]/tasks/[taskId]/route.ts`
-
-- [x] `GET /api/projects` — List with filters + pagination. Zod validation. `withManagementAuth`.
-- [x] `GET /api/projects/:id` — Detail with tasks and assignees. `withManagementAuth`.
-- [x] `GET /api/projects/:id/stats` — Not implemented separately (stats available via detail).
-- [x] `GET /api/projects/stats` — Cross-client summary. `withManagementAuth`.
-- [x] `POST /api/projects/:id/tasks` — Create task (DB immediate). Audit log (R29). TODO: Planner write-back (Step 5.1).
-- [x] `PUT /api/projects/:id/tasks/:taskId` — Update task. Employee: own tasks only. Audit log (R29).
-- [x] `DELETE /api/projects/:id/tasks/:taskId` — Delete task. Employee: own only, co-ceo/director: any. Audit log (R29).
-
-### Step 4.6: Team endpoints ✅ DONE
-> Ref: BP §5 (API Routes — Team), SO §4 (Sensitive Endpoints: PUT team is co-ceo/director only)
-> Commit: `feat(api): add team list, detail, and update endpoints`
-> Files: `src/app/api/team/route.ts`, `src/app/api/team/[id]/route.ts`
-
-- [x] `GET /api/team` — List with computed metrics. `withManagementAuth`.
-- [x] `GET /api/team/:id` — Detail. `withManagementAuth`.
-- [x] `PUT /api/team/:id` — Update. `withRole(['co-ceo', 'director'])`. Audit log (R29).
-
-### Step 4.7: Report endpoints ✅ DONE
-> Ref: BP §5 (API Routes — Reports), SO §4 (co-ceo/director only for all reports)
-> Commit: `feat(api): add revenue, team performance, SLA, and ticket analytics report endpoints`
-> Files: `src/app/api/reports/revenue/route.ts`, `src/app/api/reports/team-performance/route.ts`, `src/app/api/reports/sla-compliance/route.ts`, `src/app/api/reports/ticket-analytics/route.ts`
-
-- [x] `GET /api/reports/revenue` — `withRole(['co-ceo', 'director'])`. Range filter.
-- [x] `GET /api/reports/team-performance` — `withRole(['co-ceo', 'director'])`. Range filter.
-- [x] `GET /api/reports/sla-compliance` — `withRole(['co-ceo', 'director'])`. Range filter.
-- [x] `GET /api/reports/ticket-analytics` — `withRole(['co-ceo', 'director'])`. clientId + range filters.
-
-### Step 4.8: AI endpoints ✅ DONE
-> Commit: `feat(api): add AI chat and conversation management endpoints`
-
-- [x] `POST /api/ai/chat` — Send message, create/reuse conversation. Placeholder Claude response (Step 5.2). `withManagementAuth`.
-- [x] `GET /api/ai/conversations` — List user's conversations. `withManagementAuth`.
-- [x] `GET /api/ai/conversations/:id` — Conversation with messages. `withManagementAuth`.
-- [x] `DELETE /api/ai/conversations/:id` — Delete conversation. `withManagementAuth`.
-
-### Step 4.9: Notification endpoints ✅ DONE
-> Commit: `feat(api): add notification list, unread count, and mark-read endpoints`
-
-- [x] `GET /api/notifications` — List with type filter + pagination. `withManagementAuth`.
-- [x] `GET /api/notifications/unread-count` — Badge count. `withManagementAuth`.
-- [x] `PUT /api/notifications/mark-read` — Mark one or all. `withManagementAuth`.
-
-### Step 4.10: Contact submission endpoints ✅ DONE
-> Commit: `feat(api): add contact submission list, update, and webhook endpoints`
-
-- [x] `GET /api/contact-submissions` — List. `withRole(['co-ceo', 'director'])`.
-- [x] `PUT /api/contact-submissions/:id` — Update status. `withRole(['co-ceo', 'director'])`. Audit log (R29).
-- [x] `POST /api/contact-submissions/webhook` — Receive from flux-app. `withWebhookAuth` (X-API-Secret). Zod validation.
-
-### Step 4.11: Settings endpoints ✅ DONE
-> Commit: `feat(api): add profile settings get and update endpoints`
-
-- [x] `GET /api/settings/profile` — Current user's profile. `withManagementAuth`.
-- [x] `PUT /api/settings/profile` — Update name, phone, notification prefs. `withManagementAuth`.
-
-### Step 4.12: Connectors endpoint ✅ DONE
-> Commit: `feat(api): add connectors status endpoint`
-
-- [x] `GET /api/connectors` — Integration statuses across active orgs. `withManagementAuth`.
+### Step 4.5: Project completion percentage ✅ DONE
+- [x] Progress bars on project cards and detail
+- [x] Tasks completed / total tasks ratio
+- [x] "60% On Track" KPI on projects page
+> Fulfills: K3, U9
 
 ---
 
-## Phase 5 — Integrations
+## Phase 5 — Tech Stack Information (PRD §3.1 M5, K5)
 
-### Step 5.1: Planner write-back client ✅ DONE
-> Ref: BP §6 (Integration Details — Task Write-Back to Planner), EA §Microsoft Graph API (Write Operations — Planner rules 1-6)
-> Commit: `feat(sync): add Planner task write-back client with background execution`
-> Files: `src/lib/integrations/graph/planner-write.ts`
+> PRD SHOULD-HAVE: "Display of detailed tech stack information for each client"
 
-- [x] `createPlannerTask(planId, data)` — POST to Graph API with retry on 429.
-- [x] `updatePlannerTask(taskId, data, etag)` — PATCH with If-Match etag.
-- [x] `deletePlannerTask(taskId, etag)` — DELETE with If-Match. Ignores 404.
-- [x] `backgroundPlannerWrite(action, fn)` — Fire-and-forget wrapper. Logs errors, never throws (R33).
-- [x] Never modifies plans or buckets — only tasks (R34).
-- [x] Client credentials token with cache. Retry on 429 (max 3 attempts).
-- [ ] **Pending:** Real Planner API testing requires `Tasks.ReadWrite.All` from Brandon.
+### Step 5.1: Tech stack query module ❌ NOT DONE
+- [ ] Read from shared tables: `software_subscriptions`, `infrastructure_items`, `cloud_services`
+- [ ] These tables already exist (client portal created them) and have data
+- [ ] Need cross-org query module (similar to tickets/projects pattern)
+> Fulfills: M5, K5
 
-### Step 5.2: Claude AI context builder ✅ DONE
-> Ref: BP §7 (AI Assistant Architecture — System Prompt Template, Context Builder), EA §Claude API (Safety Rules 1-5)
-> Commit: `feat(ai): add Claude client, cross-org context builder, and management system prompt`
-> Files: `src/lib/integrations/claude/client.ts`, `src/lib/integrations/claude/context-builder.ts`, `src/lib/integrations/claude/system-prompt.ts`
+### Step 5.2: Tech stack page ❌ NOT DONE
+- [ ] New page: `/tech-stack` or per-client tech stack tab
+- [ ] Show software subscriptions (name, licenses, cost, renewal, status)
+- [ ] Show infrastructure items (devices, status)
+- [ ] Show cloud services (provider, tier, usage)
+- [ ] PRD says "for each client" — show per-client breakdown
+> Fulfills: M5, K5, D3
 
-- [x] `client.ts` — Anthropic SDK wrapper, claude-sonnet-4-20250514, 1500 max tokens.
-- [x] `context-builder.ts` — Cross-org context: clients, ticket stats, projects, team, revenue. 5 parallel queries. `is_active=true` on all (R11, R36).
-- [x] `system-prompt.ts` — Management persona with 8 rules. Includes "Verify critical information" disclaimer (R37).
-- [x] Updated `POST /api/ai/chat` to use real Claude integration instead of placeholder.
-- [x] No credentials in prompt (R36). Test org excluded via `is_active` filter.
-
-### Step 5.3: Email notification sender
-> Ref: BP §6 (Integration — Reused: Email Notifications), BP §8 (Notification System — Delivery Channels), EA §Microsoft Graph API (Outlook Mail rules)
-> Commit: `feat(sync): add email notification sender via Graph API Mail.Send`
-> Files: `src/lib/integrations/mail/sender.ts`
-> Phase Strategy: Can build now — Mail.Send permission available
-
-- [x] `sendEmail({ to, subject, htmlBody })` — Graph API Mail.Send with client credentials.
-- [x] `backgroundSendEmail(params)` — Fire-and-forget wrapper. Non-blocking (R35).
-- [x] Templates: ticket escalation, contact form alert, task assignment.
-- [x] Only sends to Flux employees and known contacts (no bulk/marketing).
-
-### Step 5.4: Contact form webhook ✅ DONE
-> Ref: BP §6 (Integration — Contact Form Webhook), EA §Contact Form Webhook (Safety Rules 1-5)
-> Commit: `feat(sync): contact form webhook already implemented in Step 4.10`
-
-- [x] `POST /api/contact-submissions/webhook` — Already implemented in Step 4.10 with `withWebhookAuth`, Zod validation, `createSubmission`.
-- [x] Stores raw submission without modification.
-- [ ] **Pending:** Wire flux-app contact form to POST to this endpoint. Update flux-app separately.
+### Step 5.3: Tech stack health indicators ❌ NOT DONE
+- [ ] PRD KPI: "Tech stack health indicators"
+- [ ] Show expiring subscriptions, offline devices, high-usage cloud services
+- [ ] Add to dashboard or client detail page
+> Fulfills: K5
 
 ---
 
-## Phase 6 — Frontend Integration
+## Phase 6 — Dashboard (PRD §3.2 W4-W5, U8-U9, AC4, AC7)
 
-### Step 6.1: Frontend API client ✅ DONE
-> Commit: `feat(ui): add frontend API client with auth cookie support`
-> Files: `src/lib/api/client.ts`
+> PRD: "Dashboard displays IT health, project timelines, and operational metrics"
 
-- [x] Fetch wrapper with `credentials: 'include'`, auto-redirect on 401, typed `ApiClientError`.
-- [x] `api.get`, `api.post`, `api.put`, `api.delete` with query param builder.
+### Step 6.1: Dashboard with cross-org data ✅ DONE
+- [x] Combined KPI endpoint: ticket stats, project stats, team count
+- [x] Real data from database (not mock)
+- [x] Greeting uses real user name from auth
+> Fulfills: W4, W5, R3, AC4
 
-### Step 6.2: React Query setup ✅ DONE
-> Commit: `feat(ui): configure React Query with query key factory`
-> Files: `src/lib/api/query-client.ts`, `src/components/providers/query-provider.tsx`, `src/app/layout.tsx`
+### Step 6.2: Dashboard KPI panels ✅ DONE
+- [x] Open tickets + critical/pending breakdown
+- [x] Active projects + at-risk/delayed count
+- [x] Average resolution time
+> Fulfills: U8, U9, K1, K2, K3
 
-- [x] `query-client.ts` — React Query config (60s stale, retry 1) + key factory for all 10 domains.
-- [x] `QueryProvider` client component wrapping root layout.
-- [x] `QueryClientProvider` added to `layout.tsx`.
+### Step 6.3: Recent tickets table ✅ DONE
+- [x] 5 most recent tickets with ticket #, subject, client, status, priority
 
-### Step 6.3: React Query hooks ✅ DONE
-> Commit: `feat(ui): add React Query hooks for all data domains`
-> Files: 11 hook files in `src/hooks/`
+### Step 6.4: Active projects carousel ✅ DONE
+- [x] Scrollable project cards with progress bars
 
-- [x] `use-auth.ts`, `use-dashboard.ts`, `use-clients.ts`, `use-tickets.ts`, `use-projects.ts`
-- [x] `use-team.ts`, `use-reports.ts`, `use-ai.ts`, `use-notifications.ts` (30s poll on unread count)
-- [x] `use-contact-submissions.ts`, `use-connectors.ts`
-- [x] All mutations invalidate relevant query keys on success.
+### Step 6.5: Ticket activity chart ❌ NOT DONE
+- [ ] PRD specifically asks for this (M9, U8)
+- [ ] Currently shows empty state message
+- [ ] Need to wire `getTicketChartData()` to Recharts ComposedChart
+- [ ] 7-day rolling chart showing tickets opened vs closed per day
+> Fulfills: M9, U8
 
-### Step 6.4: Wire dashboard page
-> Ref: BP §5 (API Routes — Dashboard)
-> Commit: `feat(ui): wire dashboard page to real API data`
-> Files: `src/app/(portal)/dashboard/page.tsx`
+### Step 6.6: Remove fake sparkline charts ❌ NOT DONE
+- [ ] Dashboard sparklines show hardcoded static data (not from any API)
+- [ ] Either wire to real data or remove entirely
+- [ ] Current state breaks trust — looks like real trends but isn't
 
-- [x] Replaced mock imports with `useDashboard()`, `useTickets()`, `useProjects()`, `useAuth()`.
-- [x] KPI panels, recent tickets table, active projects carousel use real API data.
-
-### Step 6.5: Wire clients page + client detail
-> Ref: BP §5 (API Routes — Clients)
-> Commit: `feat(ui): wire clients page and client detail to real API data`
-> Files: `src/app/(portal)/clients/page.tsx`, `src/app/(portal)/clients/[id]/page.tsx`
-
-- [x] Clients list page wired with `useClients()` — server-side filtering.
-- [x] Client detail page wired with `useClient()`, `useTickets()`, `useProjects()`.
-- [x] Loading state added.
-
-### Step 6.6: Wire tickets page + slide-over
-> Ref: BP §5 (API Routes — Tickets)
-> Commit: `feat(ui): wire tickets page and slide-over to real API data`
-> Files: `src/app/(portal)/tickets/page.tsx`, `src/components/shared/ticket-slide-over.tsx`
-
-- [x] Tickets page wired with `useTickets()` — server-side filtering and pagination.
-- [x] Mock data imports removed.
-
-### Step 6.7: Wire projects page + project detail ✅ DONE
-> Commit: `feat(ui): wire projects page to real API data` + `feat(ui): wire project detail page to real API data`
-
-- [x] Projects list wired with `useProjects()`. All 3 view modes (cards, list, timeline) use API data.
-- [x] Project detail wired with `useProject(id)`. Loading state added.
-
-### Step 6.8: Wire team page ✅ DONE
-> Commit: `feat(ui): wire team page to real API data`
-
-- [x] Wired with `useTeam()`. Loading/error states added.
-
-### Step 6.9: Wire reports pages
-> Status: Reports page uses dynamic routing — hooks ready (`useRevenueReport`, etc.) but individual report type pages need data wiring during frontend polish.
-
-### Step 6.10: Wire AI assistant page ✅ DONE
-> Commit: `feat(ui): wire ai-assistant page to real API data`
-
-- [x] Wired with `useConversations()`, `useSendMessage()`. Real Claude API calls with multi-turn conversation tracking.
-
-### Step 6.11: Wire settings page ✅ DONE
-> Commit: `feat(ui): wire settings page to real API data`
-
-- [x] Wired with `useAuth()`. Name, email, role from real session.
-
-### Step 6.12: Wire connectors page ✅ DONE
-> Commit: `feat(ui): wire connectors page to real API data`
-
-- [x] Wired with `useConnectors()`. Loading/error states added.
-
-### Step 6.13: Remove mock data files
-> Status: Deferred — some pages still import mock data for types/fallbacks. Will clean up after all pages fully verified with dev server.
+### Step 6.7: Remove/relabel non-PRD metrics from dashboard ❌ NOT DONE
+- [ ] Revenue ($70K) — not in PRD, seeded data shown as real
+- [ ] Utilization (80%) — not in PRD, default seed value shown as metric
+- [ ] Either remove these panels or clearly label as "manually managed"
+- [ ] Decision needed: discuss with Brandon whether he wants these
 
 ---
 
-## Phase 7 — Security Hardening
+## Phase 7 — Client Data & Drill-Down (PRD §3.1 M12, D3, D5)
 
-### Step 7.1: Rate limiting ✅ DONE
-> Ref: SO §6 (Rate Limiting — table with all limits), BP §9 (Security — Rate Limits table)
-> Commit: `security(api): implement rate limiting for all API routes`
-> Files: `src/lib/api/rate-limit.ts`, all `route.ts` files
-> Phase Strategy: Can build now — pure code, no external APIs
+> PRD: "Dynamic data exploration, allowing management to drill down into client information"
 
-- [x] Rate limits already applied via middleware (implemented in Step 2.3):
-  - Default: 100/min per user (via `withManagementAuth` → `getRateLimitConfig`)
-  - Auth: 10/min per IP (login/callback routes)
-  - AI Chat: 20/min per user (path-based detection)
-  - Reports: 30/min per user (path-based detection)
-  - Contact webhook: 10/min per API key (via `withWebhookAuth`)
-- [x] Verified: all 30+ protected routes go through `withManagementAuth` or `withRole` (which calls it)
+### Step 7.1: Client list page ✅ DONE
+- [x] Shows all active clients (Armada, OnPoint)
+- [x] Excludes Flux Technologies (not a client)
+- [x] Filters: search, industry, health, contract
+- [x] Click row → client detail
+> Fulfills: M12
 
-### Step 7.2: Error boundary and error pages ✅ DONE
-> Commit: `feat(ui): add error boundary, 404 page, and generic error handling`
-> Files: `src/app/not-found.tsx`, `src/app/error.tsx`
+### Step 7.2: Client detail page ✅ DONE
+- [x] Overview tab with KPIs, recent tickets, active projects
+- [x] Tickets tab with full table
+- [x] Projects tab with cards
+- [x] Contacts tab
+> Fulfills: M12
 
-- [x] `not-found.tsx` — 404 page with link to dashboard. Generic message, no internals.
-- [x] `error.tsx` — Error boundary with retry button. Generic message, no internals (R18).
-
-### Step 7.3: Audit logging integration ✅ DONE
-> Commit: `security(api): verify audit logging on all mutation endpoints`
-
-- [x] All 7 mutation endpoints call `logActivity()`: client update, internal note, team update, contact submission update, task create/update/delete.
-- [x] Read-only GET routes do NOT log (R30).
-- [x] Log entries include: user_id, action, entity_type, entity_id, organization_id, description.
-
-### Step 7.4: Test suites ✅ DONE
-> Commit: `test(security): add role access, input validation, audit logging, and is_active filter test suites`
-> Files: 4 test files in `src/__tests__/phase-7/`
-
-- [x] `role-access.test.ts` — co-ceo/director/employee allowed, client blocked (403), no auth (401), generic error messages.
-- [x] `is-active-filter.test.ts` — 10 tests verifying all cross-org queries exclude test org (clients, tickets, projects, reports, connectors).
-- [x] `audit-logging.test.ts` — logActivity writes correct fields, read-only routes don't import logActivity, mutation routes do.
-- [x] `input-validation.test.ts` — Zod schemas reject: invalid status, oversized content, missing required fields, out-of-range numbers, invalid emails.
-- [x] R56 verified: `npm test` passes twice consecutively (154 tests, no state leakage).
-
-### Step 7.5: Security checklist review ✅ DONE
-> Commit: `security(infra): complete security checklist review`
-
-- [x] All 30+ API routes have `withManagementAuth` or `withRole` middleware
-- [x] All inputs validated with Zod (9 validator files)
-- [x] All SQL parameterized (`$1, $2` params, no string concatenation)
-- [x] No `SELECT *` anywhere in query modules (verified via grep)
-- [x] No `dangerouslySetInnerHTML` anywhere in codebase (verified via grep)
-- [x] Security headers present (HSTS, X-Frame-Options DENY, CSP, nosniff, Referrer-Policy)
-- [x] Rate limiting active on all routes (100 default, 10 auth, 20 AI, 30 reports, 10 webhook)
-- [x] Audit logging on all 7 mutation endpoints, not on read-only routes
-- [x] Generic error messages only — no table names, SQL, or stack traces leaked
-- [x] No hardcoded secrets in codebase
-- [x] 154 tests passing, R56 verified (no state leakage)
-- [ ] No hardcoded secrets → SO §8, SO §10
-- [ ] `git diff` reviewed — no secrets leaked → SO §10
+### Step 7.3: Client data entry (Wisetrack replacement) ❌ NOT DONE
+- [ ] PRD §4.1: "Client information (company name, contact details, tech stack)" from Wisetrack CRM
+- [ ] PRD says "This can be a manual process" (I3)
+- [ ] Need editable client profile form: company name, contacts, industry
+- [ ] Currently client profile data was seeded — no way for managers to edit it
+- [ ] The `PUT /api/clients/:id` endpoint exists but no frontend edit form is wired
+> Fulfills: D3, D5, I3
 
 ---
 
-## Phase 8 — Deployment
+## Phase 8 — AI Assistant (PRD §3.1 M6, M11, §6, W15-W18, A8-A11)
 
-> **Status update (April 25, 2026):** Most Phase 8 items are now unblocked.
-> - Production DB exists (shared with client portal): `flux-clientportal-prod-db.postgres.database.azure.com`
-> - Azure AD app registered + consent granted
-> - Deploy via Vercel (same as client portal)
-> - Use `development@flux.tech` as email sender until dedicated address provided
->
-> **Still blocked on Brandon:** M365 Group IDs (Planner write-back), production domain DNS, user role confirmation
+> PRD NICE-TO-HAVE: "An AI-powered assistant that can answer operational questions leveraging the data within the system"
 
-### Step 8.1: Deploy to Vercel ✅ UNBLOCKED (was: Azure App Service provisioning)
-> Ref: BP §2 (Azure Infrastructure — Resources Required), BP §9 (Security — Network-Level Restrictions), SO §7 (Network Security)
-> Commit: `chore(infra): provision Azure App Service for management portal`
-> Files: Azure portal configuration (no code files)
-> Phase Strategy: **Can do now** — use Vercel like client portal, no Azure App Service needed
+### Step 8.1: Claude AI integration ✅ DONE
+- [x] Anthropic SDK client (claude-sonnet-4-20250514)
+- [x] Cross-org context builder (tickets, projects, team, clients)
+- [x] Management persona system prompt
+- [x] "Verify critical information" disclaimer
+> Fulfills: M6, M11, A8, A10, W15-W18
 
-- [ ] Create new Vercel project, link `flux-management` repo
-- [ ] Configure env vars in Vercel (DATABASE_URL, Azure AD credentials, API keys)
-- [ ] Set up preview + production deployments
-- [ ] Verify build passes on Vercel
+### Step 8.2: AI chat interface ✅ DONE
+- [x] Chat page with message history
+- [x] Suggested queries
+- [x] Conversation persistence in database
+- [x] Send via Enter, Shift+Enter for newline
+> Fulfills: M6, AC5
 
-### Step 8.2: Azure AD app registration ✅ DONE
-> Completed April 25, 2026
+### Step 8.3: AI context includes real data ✅ DONE
+- [x] Context builder queries all active org data
+- [x] `is_active=true` filter excludes test org
+- [x] No secrets/credentials in prompt
+> Fulfills: A10 (100% accurate data-driven answers)
 
-- [x] Registered `flux-management-dev` in Azure AD
-- [x] Admin consent granted for all 5 permissions (User.Read, Tasks.ReadWrite.All, Sites.Read.All, Mail.Send, Group.Read.All)
-- [x] Redirect URI configured for dev (`http://localhost:3001/api/auth/callback`)
-- [x] SSO tested and working on localhost
-- [ ] Add production redirect URI when domain is decided
+---
 
-### Step 8.3: Run migrations on production database ✅ UNBLOCKED
-> Phase Strategy: **Can do now** — production DB exists: `flux-clientportal-prod-db.postgres.database.azure.com`, database `fluxdb`. Same shared DB as client portal. Admin credentials available from client portal setup.
+## Phase 9 — Notifications (PRD §7.3, U10-U14, I4-I5)
 
-- [ ] Connect to production PostgreSQL using admin credentials
-- [ ] Run `005_management_tables.sql` (7 new tables)
-- [ ] Run `006_extend_user_roles.sql` (extend role enum with `co-ceo`)
-- [ ] Verify tables created, client portal tables unaffected
+> PRD: "Management: When critical IT issues occur. Weekly summary reports."
 
-### Step 8.4: Seed production data ✅ UNBLOCKED
-> Phase Strategy: **Can do now** — once migrations are applied
+### Step 9.1: In-app notifications ✅ DONE
+- [x] `management_notifications` table with 6 types
+- [x] API: list, unread-count, mark-read
+- [x] Bell icon with unread badge in top bar
+- [x] Notification dropdown
+> Fulfills: U14
 
-- [ ] Run `npm run db:seed` against production DB
-- [ ] Seed `client_profiles` for Armada and OnPoint
-- [ ] Seed `team_members` for Brandon, Zack, Cameron
-- [ ] User role updates (`co-ceo`, `director`) — pending confirmation from Brandon (commented out in seed)
+### Step 9.2: Email notifications ✅ DONE
+- [x] Graph API Mail.Send integration
+- [x] Templates: ticket escalation, contact form alert, task assignment
+- [x] Fire-and-forget (non-blocking)
+> Fulfills: U13, I4
 
-### Step 8.5: Deploy + configure ✅ UNBLOCKED
-> Phase Strategy: **Can do now** — Vercel deployment, `development@flux.tech` as temp email sender
+### Step 9.3: Contact form webhook ✅ DONE
+- [x] `POST /api/contact-submissions/webhook` with X-API-Secret auth
+- [x] Stores raw submission in database
+- [ ] Notification creation on submission not wired (TODO in code)
+- [ ] flux-app contact form not yet configured to call this endpoint
+> Fulfills: I5, D4, D9, R4 — partially
 
-- [ ] Deploy to Vercel with production env vars
-- [ ] Set `AZURE_AD_REDIRECT_URI` to production callback URL
-- [ ] Set `NEXT_PUBLIC_APP_URL` to Vercel URL (custom domain later)
-- [ ] Set `NOTIFICATION_SENDER_EMAIL=development@flux.tech` (until dedicated address provided)
-- [ ] Verify build + deployment succeeds
+### Step 9.4: Weekly summary reports ❌ NOT DONE
+- [ ] PRD asks for "Weekly summary reports" for management (U11)
+- [ ] PRD §6: "Report generation (weekly/monthly summaries for management)" (A4)
+- [ ] Need scheduled job that generates and emails a weekly digest
+> Fulfills: U11, A4, R5
 
-### Step 8.6: Post-deployment verification + merge
-> Phase Strategy: **Can do after Steps 8.1-8.5**
+### Step 9.5: Critical issue notifications ⚠️ PARTIAL
+- [ ] PRD asks for notifications "When critical IT issues occur" (U10)
+- [ ] Email template exists but trigger logic not implemented
+- [ ] Need: when a ticket is synced with priority="Critical", create notification + send email
+> Fulfills: U10
 
-- [ ] Verify Azure AD login works on production
-- [ ] Verify cross-org data access (dashboard shows real client data)
-- [ ] Verify AI assistant with real data
-- [ ] Planner write-back — **still blocked** (needs M365 Group IDs from Brandon)
-- [ ] Email notifications — test with `development@flux.tech`
-- [ ] Run security checklist
-- [ ] Merge `feat/backend-implementation` → `main`
+---
+
+## Phase 10 — Reporting (PRD §4.3 R1-R5, AC7)
+
+> PRD: "Client-level IT Help Desk activity reports", "Project progress and timeline reports", "Management dashboard with company-wide metrics"
+
+### Step 10.1: Management dashboard ✅ DONE
+- [x] Company-wide ticket stats, project stats
+- [x] Cross-org data from all clients
+> Fulfills: R3, AC7
+
+### Step 10.2: Client-level ticket activity reports ⚠️ PARTIAL
+- [x] Client detail page shows that client's tickets
+- [x] `getClientStats()` returns per-client ticket metrics
+- [ ] No formal "report" view — just raw data on client detail page
+- [ ] PRD asks for "Client-level IT Help Desk activity reports" (R1) — needs a downloadable/printable format
+> Fulfills: R1 — partially
+
+### Step 10.3: Project progress reports ✅ DONE
+- [x] Projects page with timeline view, progress bars, task counts
+- [x] Per-project detail with Gantt chart
+> Fulfills: R2
+
+### Step 10.4: Contact form submission summary ✅ DONE
+- [x] Contact submissions page with list, status filter, update status
+> Fulfills: R4
+
+### Step 10.5: Weekly/monthly management summaries ❌ NOT DONE
+- [ ] Same as Step 9.4 — scheduled report generation
+> Fulfills: R5
+
+---
+
+## Phase 11 — Employee Access (PRD §2.2, W10-W14)
+
+> PRD: "Lower-Level Employees: Just access to project management system and only enough access to create, delete, or complete a task"
+
+### Step 11.1: Employee role restrictions ✅ DONE
+- [x] Employees can access: dashboard (limited), tickets, projects, settings
+- [x] Employees blocked from: reports, AI, contact submissions, team edit, client edit
+- [x] Task CRUD: employees can create/update/delete their own tasks only
+> Fulfills: PRD §2.2 employee permissions
+
+---
+
+## Phase 12 — Security & Compliance (PRD §8.2, T4-T7, AC9)
+
+### Step 12.1: Role-based access control ✅ DONE
+- [x] Co-CEO: full access
+- [x] Director: full access
+- [x] Employee: limited (projects + tasks only)
+- [x] Client: blocked from management portal
+> Fulfills: T4, U2
+
+### Step 12.2: Audit logging ✅ DONE
+- [x] `activity_log` table
+- [x] All 7 mutation endpoints log actions
+- [x] Read-only operations do not log
+> Fulfills: T6, AC9
+
+### Step 12.3: Security hardening ✅ DONE
+- [x] Parameterized SQL, no SELECT *, Zod validation
+- [x] Security headers (HSTS, X-Frame-Options, CSP)
+- [x] Rate limiting (5 tiers)
+- [x] Generic error messages only
+- [x] 404 page, error boundary
+> Fulfills: T4, AC9
+
+### Step 12.4: Data encryption ⚠️ PARTIAL
+- [x] TLS in transit (Azure PostgreSQL requires SSL)
+- [x] Azure encrypts at rest by default
+- [ ] No application-level encryption
+> Fulfills: PRD §4.2 compliance — partially
+
+---
+
+## Phase 13 — Performance (PRD §8.1, T1-T3)
+
+### Step 13.1: Dashboard load time ✅ DONE
+- [x] Dashboard loads in ~2 seconds locally
+- [x] React Query with 60s stale time
+> Fulfills: T1 (< 5 seconds)
+
+### Step 13.2: AI response time ✅ DONE
+- [x] Claude responds in ~3-5 seconds for simple queries
+> Fulfills: T2 (< 10 seconds)
+
+### Step 13.3: Data sync ✅ DONE
+- [x] Atera: every 5 min
+- [x] Planner: every 15 min
+> Fulfills: T3 (near real-time)
+
+---
+
+## Phase 14 — Deployment
+
+### Step 14.1: Azure AD app registration ✅ DONE
+- [x] `flux-management-dev` registered, admin consent granted
+- [x] SSO working on localhost
+
+### Step 14.2: Deploy to Vercel ❌ NOT DONE
+- [ ] Create Vercel project, link repo
+- [ ] Configure env vars
+- [ ] Set production redirect URI in Azure AD
+
+### Step 14.3: Run migrations on production ❌ NOT DONE
+- [ ] Run 005 + 006 on production PostgreSQL
+- [ ] Verify client portal unaffected
+
+### Step 14.4: Seed production data ❌ NOT DONE
+- [ ] Team members, client profiles (from Wisetrack or manual entry)
+
+### Step 14.5: Post-deployment verification ❌ NOT DONE
+- [ ] SSO login on production
+- [ ] Cross-org data loads
+- [ ] AI assistant works with real data
+- [ ] Notifications trigger
+> Fulfills: AC1-AC9
+
+---
+
+## Phase 15 — Scope Creep Items (NOT in PRD — Decision Required)
+
+These features were built but are NOT traceable to any PRD requirement. They need a decision: **keep, modify, or remove**.
+
+| Feature | Current State | Risk | Recommendation |
+|---|---|---|---|
+| Revenue tracking ($70K) | Seeded data shown as real metric | HIGH — fake data | Remove from dashboard OR add "Manually entered" label + edit form |
+| SLA compliance (59%, 54%) | Computed from ticket data | HIGH — unvalidated metric | Remove OR discuss with Brandon |
+| Health scores (Healthy/At Risk/Critical) | Seeded, not computed | MEDIUM | Keep if Brandon wants manual health tracking, add edit form |
+| Utilization (80%) | Default seed value | HIGH — meaningless number | Change label to "Target" or remove |
+| Revenue Report page | Full report with charts | HIGH — based on seeded data | Remove or label as "Beta" |
+| SLA Compliance Report page | Report with gauges | HIGH — unvalidated | Remove or label |
+| Team Performance Report page | Productivity charts | MEDIUM — real ticket data | Keep but rename, remove utilization |
+| Ticket Analytics Report page | Priority breakdown | LOW — uses real data | Keep — this is basically R1 from PRD |
+| Sparkline charts on dashboard | Hardcoded static arrays | HIGH — fake trends | Remove |
+| Internal notes on tickets | Management-only notes | LOW — useful | Keep |
+| Connectors page | Sync health monitoring | LOW — useful | Keep |
+| Client profiles (industry, contract) | Seeded data | LOW | Keep — aligns with D3/D5, add edit form |
+| Report snapshots table | Infrastructure for trends | LOW | Keep — not user-facing |
+| Activity log / audit trail | All mutations logged | LOW — good practice | Keep — required by T6 |
 
 ---
 
@@ -933,77 +471,50 @@ export {};
 
 > **Last updated:** May 2, 2026
 
-| Phase | Steps | Done | Status |
-|-------|-------|------|--------|
-| 0. Pre-Implementation Setup | 6 | 6 | ✅ Complete |
-| 1. Database Foundation | 6 | 6 | ✅ Complete |
-| 2. Authentication | 6 | 6 | ✅ Complete (Azure AD SSO working) |
-| 3. Database Query Modules | 11 | 11 | ✅ Complete (12 query modules, 154 tests) |
-| 4. API Routes | 12 | 12 | ✅ Complete (39 endpoints, all with auth + Zod) |
-| 5. Integrations | 4 | 4 | ✅ Complete (Planner write-back, Claude AI, email, webhook) |
-| 6. Frontend Integration | 13 | 12 | 🟡 Step 6.13 (mock cleanup) pending |
-| 7. Security Hardening | 5 | 5 | ✅ Complete (154 tests, security checklist passed) |
-| 8. Deployment | 6 | 1 | 🟡 Step 8.2 done. Steps 8.1, 8.3-8.5 unblocked. |
-| **Total** | **69** | **63** | **91% complete** |
+### PRD Requirements Status
 
-### PRD Audit (May 2, 2026)
+| Category | Total | ✅ Done | ❌ Missing | ⚠️ Partial |
+|---|---|---|---|---|
+| Must-have features (M3, M4) | 2 | 2 | 0 | 0 |
+| Should-have features (M5) | 1 | 0 | 1 | 0 |
+| Nice-to-have features (M6) | 1 | 1 | 0 | 0 |
+| Data inputs (M7-M10, M13) | 5 | 5 | 0 | 0 |
+| Data outputs (M11-M12) | 2 | 2 | 0 | 0 |
+| Charts & trends (M8-M9) | 2 | 0 | 1 | 1 |
+| KPIs (K1-K5) | 5 | 3 | 2 | 0 |
+| Reports (R1-R5) | 5 | 3 | 1 | 1 |
+| Integrations (I1-I6) | 6 | 3 | 2 | 1 |
+| AI (A1-A11) | 11 | 5 | 3 | 3 |
+| UX (U1-U14) | 14 | 11 | 2 | 1 |
+| Technical (T1-T12) | 12 | 9 | 0 | 3 |
+| Acceptance (AC1-AC9) | 9 | 7 | 0 | 2 |
 
-**PRD Coverage: 38/38 planned endpoints built + 1 bonus (connectors)**
+### What Must Be Fixed Before Showing to Brandon
 
-| PRD Section | Status | Notes |
-|---|---|---|
-| §1 Architecture | ✅ Complete | Cross-org access, shared DB, middleware-only access control |
-| §2 Azure Infrastructure | ✅ 95% | App registered, consent granted. Vercel deployment unblocked. |
-| §3 Auth & Authorization | ✅ Complete | OAuth2 + PKCE, JWT sessions, withManagementAuth/withRole, client role blocked |
-| §4 Database Schema | ✅ Complete | 7 new tables + 17 shared = 24 total. UUID migration done. |
-| §5 API Routes (38 endpoints) | ✅ Complete | All 38 built + 1 bonus (connectors). Auth + Zod on all. |
-| §6 Integrations | ✅ Complete | Planner write-back, Claude AI, email sender, webhook receiver |
-| §7 AI Assistant | ✅ Complete | Cross-org context builder, management persona, real Claude API |
-| §8 Notification System | ✅ Complete | 6 notification types, in-app + email templates |
-| §9 Security | ✅ Complete | Parameterized SQL, no SELECT *, Zod, headers, audit logging, rate limits |
-| §10 Test Strategy | ✅ Complete | 154 tests, R56 verified, test org isolation, guards |
+| # | Item | PRD Ref | Effort |
+|---|---|---|---|
+| 1 | Build 7-day ticket activity chart (wire existing query to Recharts) | M9 | 4-6h |
+| 2 | Remove or label fake sparkline charts | — | 30min |
+| 3 | Remove or label revenue/SLA/utilization on dashboard | — | 2h |
+| 4 | Add tech stack page (read from existing shared tables) | M5 | 4-6h |
+| 5 | Wire 30-day ticket trends to dashboard | M8 | 2-3h |
 
-### What's Built (complete)
-- **39 API endpoints** (38 planned + connectors bonus) — all with auth middleware + Zod validation
-- **12 query modules** covering all 24 tables — parameterized SQL, `is_active` filter on all cross-org queries
-- **Authentication** — Azure AD OAuth2 + PKCE, JWT in `flux-management-session` cookie (no org ID), SSO working
-- **3 middleware wrappers** — `withManagementAuth`, `withRole`, `withWebhookAuth`
-- **Integrations** — Planner task write-back (background, non-blocking), Claude AI with cross-org context, email via Graph API Mail.Send, contact form webhook
-- **11 React Query hooks** (30+ exported functions) — all pages wired to real APIs
-- **154 automated tests** — session, middleware, auth routes, all query modules, role access, is_active filter, audit logging, input validation
-- **Security hardening** — rate limiting (5 tiers), audit logging (7 mutations), error boundary, 404 page, security headers
-- **UUID migration** — all predictable seed IDs replaced with random UUIDs
-- **UI fixes** — sidebar/avatar wired to real user, ticket descriptions stripped of HTML, real team stats, Flux Technologies excluded from clients, SLA calculation fixed
+### What Should Be Done Before Launch
 
-### What's NOT Built (from PRD)
-- **Nightly report snapshot job** — `report_snapshots` table + query module exist, but Azure Function scheduler not deployed. Similar to client portal's Step 4.8 (also pending).
+| # | Item | PRD Ref | Effort |
+|---|---|---|---|
+| 6 | Client data edit form (contacts, details) | D3, I3 | 4-6h |
+| 7 | Contact form notification trigger | I5 | 2h |
+| 8 | Critical ticket notification trigger | U10 | 3h |
+| 9 | Deploy to Vercel | — | 1h |
+| 10 | Run production migrations + seed | — | 1h |
 
-### What's Built But NOT in PRD
-- `GET /api/connectors` — integration health monitoring endpoint (practical addition)
-- `GET /api/auth/dev-login` — development testing bypass
-- Per-client connector breakdown on connectors page
-- Real technician team members added (Brandon Herring, Zach Grasberger, Andy Turner, Kayla Caldwell)
+### What Can Wait (Post-Launch)
 
-### What's Pending (can do now)
-- **Step 6.13:** Remove mock data files
-- **Step 8.1:** Deploy to Vercel
-- **Step 8.3:** Run migrations 005-006 on production DB
-- **Step 8.4:** Seed production data
-- **Step 8.5:** Configure production env vars
-- **Step 8.6:** Post-deployment verification + merge
-
-### What's Done (from Brandon)
-- **Azure AD app registration** (`flux-management-dev`) — created, admin consent granted (April 25, 2026)
-- **API permissions granted:** `User.Read`, `Tasks.ReadWrite.All`, `Sites.Read.All`, `Mail.Send`, `Group.Read.All`
-- **Azure AD SSO login** — tested and working on localhost:3001
-
-### What's Unblocked (was thought blocked)
-- **Production DATABASE_URL** — same shared DB as client portal (`flux-clientportal-prod-db.postgres.database.azure.com`, `fluxdb`)
-- **Migrations 005-006 on production** — can run with admin credentials
-- **Deployment** — Vercel (same as client portal). No Azure App Service needed.
-- **Email sender** — use `development@flux.tech` for now
-
-### What's Actually Blocked on Brandon (3 items)
-- **M365 Group IDs** — which Planner plans map to which client orgs (blocks Planner write-back testing only)
-- **Production domain + DNS** — custom domain for management portal (can use Vercel URL temporarily)
-- **User role confirmation** — Brandon/Zack as `co-ceo`, Cameron as `director` (applied locally, needs confirmation for production)
+| # | Item | PRD Ref | Effort |
+|---|---|---|---|
+| 11 | Weekly summary email reports | R5, U11, A4 | 6-8h |
+| 12 | OneDrive document integration | I6 | 4-6h |
+| 13 | Wisetrack CRM integration (if not manual) | I3 | TBD |
+| 14 | AI predictive insights (trends, resource allocation) | A5-A7 | Future |
+| 15 | MFA enforcement via Conditional Access | T5 | Brandon config |
