@@ -44,17 +44,23 @@ export async function GET(request: NextRequest) {
       year: "numeric",
     });
 
+    // ?test=true sends only to development@flux.tech instead of real recipients
+    const isTest = request.nextUrl.searchParams.get("test") === "true";
+    const recipients = isTest
+      ? [{ email: "development@flux.tech" }]
+      : managers.rows;
+
     let sent = 0;
-    for (const mgr of managers.rows) {
+    for (const recipient of recipients) {
       backgroundSendEmail({
-        to: mgr.email,
+        to: recipient.email,
         subject: `Flux Weekly Digest — ${weekOf}`,
         htmlBody,
       });
       sent++;
     }
 
-    return successResponse({ sent, recipients: managers.rows.map((m) => m.email) });
+    return successResponse({ sent, recipients: recipients.map((r) => r.email) });
   } catch (err) {
     console.error("[cron/weekly-digest] failed:", (err as Error).message);
     return Errors.INTERNAL();
