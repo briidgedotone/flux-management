@@ -4,14 +4,14 @@
 
 ### Task 1: Extend Atera sync to pull devices into infrastructure_items ✅ DONE
 - **Codebase:** `Flux-client`
-- **What:** Added `syncAteraDevices()` alongside ticket sync. Upserts agents into `infrastructure_items` with device type inference (server, workstation, firewall, etc.) from agent name/OS.
+- **What:** Added `syncAteraDevices()` alongside ticket sync. Upserts agents into `infrastructure_items` with device type inference + hardware details (vendor, model, OS, memory, disk).
 - **Sync route:** Atera sync now runs tickets + devices in parallel
 
-### Task 2: Extend SharePoint sync to pull software/cloud data
+### Task 2: Sync software subscriptions from Azure AD groups ✅ DONE
 - **Codebase:** `Flux-client`
-- **What:** If clients have software subscription lists or cloud service inventories in SharePoint, sync them into `software_subscriptions` and `cloud_services` tables.
-- **Depends on:** Brandon confirming if this data exists in SharePoint
-- **Effort:** 4-6 hours (depends on SharePoint structure)
+- **What:** SharePoint has no structured software data. Instead, Azure AD security groups (e.g., "Adobe - Users", "Dashlane Users") track software licenses. Syncs group names + member counts into `software_subscriptions`.
+- **Also:** Device sync now enriched with hardware details (vendor, model, OS, processor, memory, disk) via migration 006.
+- **Note:** Software groups are tenant-wide (Flux manages for all clients), assigned to Flux org.
 
 ### Task 3: Azure Functions for scheduled sync (Step 4.8)
 - **Codebase:** `Flux-client`
@@ -34,3 +34,10 @@
 - **Codebase:** `Flux-client`
 - **What:** Configure `portal.flux.tech` DNS CNAME → Vercel
 - **Blocked on:** Brandon adding DNS record
+
+### Task 7: M365 license SKU sync (TBD)
+- **Codebase:** `Flux-client`
+- **What:** Sync Microsoft 365 license data (SKU names, consumed/total counts) from Graph API `/subscribedSkus` into `software_subscriptions`
+- **Blocked on:** Brandon granting `Organization.Read.All` permission to the `flux-clientportal-dev` app registration in Azure AD
+- **Also consider:** `User.Read.All` permission to resolve group member names (currently null due to insufficient privileges)
+- **Effort:** 2-3 hours once permission is granted
