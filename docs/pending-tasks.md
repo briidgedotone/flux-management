@@ -2,15 +2,10 @@
 
 ## Client Portal Tasks
 
-### Task 1: Extend Atera sync to pull devices into infrastructure_items
+### Task 1: Extend Atera sync to pull devices into infrastructure_items ✅ DONE
 - **Codebase:** `Flux-client`
-- **What:** The Atera API client already has `getAgents()` function. Need to write a sync function that pulls agents/devices and upserts into `infrastructure_items` table.
-- **Why:** Management portal's tech stack page reads from `infrastructure_items` but it's empty because no sync populates it.
-- **Files to modify:**
-  - `src/lib/integrations/atera/sync.ts` — add `syncAteraDevices()` function
-  - `src/app/api/sync/atera/route.ts` — call the new sync alongside ticket sync
-- **Pattern:** Follow `syncAteraTickets()` — fetch all agents, map fields, upsert with ON CONFLICT
-- **Effort:** 2-3 hours
+- **What:** Added `syncAteraDevices()` alongside ticket sync. Upserts agents into `infrastructure_items` with device type inference (server, workstation, firewall, etc.) from agent name/OS.
+- **Sync route:** Atera sync now runs tickets + devices in parallel
 
 ### Task 2: Extend SharePoint sync to pull software/cloud data
 - **Codebase:** `Flux-client`
