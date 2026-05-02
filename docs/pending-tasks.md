@@ -13,11 +13,10 @@
 - **Also:** Device sync now enriched with hardware details (vendor, model, OS, processor, memory, disk) via migration 006.
 - **Note:** Software groups are tenant-wide (Flux manages for all clients), assigned to Flux org.
 
-### Task 3: Azure Functions for scheduled sync (Step 4.8)
+### Task 3: Scheduled sync via Vercel Cron ✅ DONE
 - **Codebase:** `Flux-client`
-- **What:** Deploy timer triggers for automated sync (Atera 5m, Planner 15m, SharePoint 30m)
-- **Status:** Still pending from original client portal implementation plan
-- **Effort:** 4-6 hours
+- **What:** Vercel Cron config in `vercel.json` — Atera every 1 min, Planner every 5 min, SharePoint every 5 min
+- **Activates on deploy:** Cron jobs start running once the client portal is deployed to Vercel
 
 ### Task 5: Trigger critical ticket notification during Atera sync ✅ DONE
 - **Codebase:** `Flux-client`
