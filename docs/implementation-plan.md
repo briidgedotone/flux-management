@@ -311,20 +311,24 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 ### Step 9.3: Contact form webhook ✅ DONE
 - [x] `POST /api/contact-submissions/webhook` with X-API-Secret auth
 - [x] Stores raw submission in database
-- [ ] Notification creation on submission not wired (TODO in code)
-- [ ] flux-app contact form not yet configured to call this endpoint
-> Fulfills: I5, D4, D9, R4 — partially
+- [x] Creates in-app notification for all co-ceo/director users
+- [x] Sends email notification via Graph API (non-blocking)
+- [x] Contact Submissions page built with status management (New → Reviewed → Responded)
+- [x] "Leads" sidebar link added
+- [x] Middleware updated to allow webhook without session cookie
+- [ ] flux-app contact form not yet configured to call this endpoint (Task 6 in pending-tasks.md)
+> Fulfills: I5, D4, D9, R4
 
-### Step 9.4: Weekly summary reports ❌ NOT DONE
-- [ ] PRD asks for "Weekly summary reports" for management (U11)
-- [ ] PRD §6: "Report generation (weekly/monthly summaries for management)" (A4)
-- [ ] Need scheduled job that generates and emails a weekly digest
-> Fulfills: U11, A4, R5
+### Step 9.4: Weekly summary reports ⚠️ PARTIAL
+- [x] Manual report generation built — "Full Management Summary" report on Reports page
+- [x] Generates combined ticket + project summary with time range selector
+- [x] Print/download via browser print
+- [ ] Automated weekly email digest not yet built (needs scheduled job)
+> Fulfills: U11, A4, R5 — partially
 
-### Step 9.5: Critical issue notifications ⚠️ PARTIAL
-- [ ] PRD asks for notifications "When critical IT issues occur" (U10)
-- [ ] Email template exists but trigger logic not implemented
-- [ ] Need: when a ticket is synced with priority="Critical", create notification + send email
+### Step 9.5: Critical issue notifications — DEFERRED TO CLIENT PORTAL
+- [ ] Trigger point is during Atera sync (client portal codebase)
+- [ ] Added as Task 5 in pending-tasks.md
 > Fulfills: U10
 
 ---
@@ -338,25 +342,33 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 - [x] Cross-org data from all clients
 > Fulfills: R3, AC7
 
-### Step 10.2: Client-level ticket activity reports ⚠️ PARTIAL
-- [x] Client detail page shows that client's tickets
-- [x] `getClientStats()` returns per-client ticket metrics
-- [ ] No formal "report" view — just raw data on client detail page
-- [ ] PRD asks for "Client-level IT Help Desk activity reports" (R1) — needs a downloadable/printable format
-> Fulfills: R1 — partially
+### Step 10.2: Client-level ticket activity reports ✅ DONE
+- [x] "Ticket Activity Report" on Reports page — per-client or all clients
+- [x] Shows: total, open, pending, closed, critical, high, created, resolved in period
+- [x] Time range selector (7d/30d/90d)
+- [x] Written summary paragraph
+- [x] Print/download via browser print
+- [x] Respects global client filter from sidebar
+> Fulfills: R1
 
 ### Step 10.3: Project progress reports ✅ DONE
-- [x] Projects page with timeline view, progress bars, task counts
-- [x] Per-project detail with Gantt chart
+- [x] "Project Progress Report" on Reports page — per-client or all clients
+- [x] Shows: total, on track, at risk, delayed + per-project detail with progress bars
+- [x] Print/download via browser print
+- [x] Also: Projects page with timeline view, Gantt chart
 > Fulfills: R2
 
 ### Step 10.4: Contact form submission summary ✅ DONE
-- [x] Contact submissions page with list, status filter, update status
+- [x] Contact submissions page ("Leads") with list, status filter, update status
 > Fulfills: R4
 
-### Step 10.5: Weekly/monthly management summaries ❌ NOT DONE
-- [ ] Same as Step 9.4 — scheduled report generation
-> Fulfills: R5
+### Step 10.5: Weekly/monthly management summaries ✅ DONE (manual)
+- [x] "Full Management Summary" report on Reports page
+- [x] Combined: clients overview + ticket stats + project status
+- [x] Time range selector, print support
+- [x] Scope creep report pages removed (revenue, SLA, team performance)
+- [ ] Automated weekly email not yet built (needs scheduled job — added to pending tasks)
+> Fulfills: R5 — manual generation done, automation pending
 
 ---
 
