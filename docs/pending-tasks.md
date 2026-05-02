@@ -33,14 +33,11 @@
 - **Email:** Use existing `ticketEscalationEmail` template via Graph API Mail.Send
 - **Effort:** 2-3 hours
 
-### Task 6: Wire marketing website contact form to management portal webhook
+### Task 6: Wire marketing website contact form to management portal webhook ✅ DONE
 - **Codebase:** `flux-app` (marketing website)
-- **What:** The contact form currently sends to Google Sheets (or email). Need to also POST to management portal's webhook endpoint: `POST /api/contact-submissions/webhook` with `X-API-Secret` header.
-- **Webhook URL:** `https://<management-portal-url>/api/contact-submissions/webhook`
-- **Headers:** `Content-Type: application/json`, `X-API-Secret: <CONTACT_WEBHOOK_SECRET>`
-- **Body:** `{ name, email, company, phone, serviceInterest, message }`
-- **Notes:** Can dual-submit (keep existing Google Sheets + add webhook call). Webhook secret needs to be added to flux-app's env vars.
-- **Effort:** 1-2 hours
+- **What:** Both contact and book-a-meeting forms now dual-submit to Google Sheets + management portal webhook
+- **Env vars needed in flux-app:** `NEXT_PUBLIC_MANAGEMENT_WEBHOOK_URL`, `NEXT_PUBLIC_MANAGEMENT_WEBHOOK_SECRET`
+- **Production URL:** Update `NEXT_PUBLIC_MANAGEMENT_WEBHOOK_URL` to production management portal URL after deployment
 
 ### Task 4: Production domain for client portal (Step 8.8)
 - **Codebase:** `Flux-client`
