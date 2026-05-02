@@ -24,6 +24,15 @@
 - **Status:** Still pending from original client portal implementation plan
 - **Effort:** 4-6 hours
 
+### Task 5: Wire marketing website contact form to management portal webhook
+- **Codebase:** `flux-app` (marketing website)
+- **What:** The contact form currently sends to Google Sheets (or email). Need to also POST to management portal's webhook endpoint: `POST /api/contact-submissions/webhook` with `X-API-Secret` header.
+- **Webhook URL:** `https://<management-portal-url>/api/contact-submissions/webhook`
+- **Headers:** `Content-Type: application/json`, `X-API-Secret: <CONTACT_WEBHOOK_SECRET>`
+- **Body:** `{ name, email, company, phone, serviceInterest, message }`
+- **Notes:** Can dual-submit (keep existing Google Sheets + add webhook call). Webhook secret needs to be added to flux-app's env vars.
+- **Effort:** 1-2 hours
+
 ### Task 4: Production domain for client portal (Step 8.8)
 - **Codebase:** `Flux-client`
 - **What:** Configure `portal.flux.tech` DNS CNAME → Vercel
