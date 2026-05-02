@@ -238,25 +238,29 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 > PRD: "Dynamic data exploration, allowing management to drill down into client information"
 
 ### Step 7.1: Client list page ✅ DONE
-- [x] Shows all active clients (Armada, OnPoint)
-- [x] Excludes Flux Technologies (not a client)
-- [x] Filters: search, industry, health, contract
-- [x] Click row → client detail
+- [x] Shows all active clients (LEFT JOIN — new orgs from Atera appear even without profile)
+- [x] Excludes Flux Technologies by slug
+- [x] "No profile" badge on clients without profiles
+- [x] Removed scope creep columns (revenue, health, contract, SLA)
+- [x] Shows: Company Name, Primary Contact, Industry, Open Tickets, Active Projects
 > Fulfills: M12
 
 ### Step 7.2: Client detail page ✅ DONE
-- [x] Overview tab with KPIs, recent tickets, active projects
+- [x] Overview tab with ticket/project KPIs, recent tickets, active projects
 - [x] Tickets tab with full table
 - [x] Projects tab with cards
-- [x] Contacts tab
+- [x] Profile tab with edit form (replaced old Contacts tab)
+- [x] Removed scope creep: revenue, SLA target, health score, contract status
 > Fulfills: M12
 
-### Step 7.3: Client data entry (Wisetrack replacement) ❌ NOT DONE
-- [ ] PRD §4.1: "Client information (company name, contact details, tech stack)" from Wisetrack CRM
-- [ ] PRD says "This can be a manual process" (I3)
-- [ ] Need editable client profile form: company name, contacts, industry
-- [ ] Currently client profile data was seeded — no way for managers to edit it
-- [ ] The `PUT /api/clients/:id` endpoint exists but no frontend edit form is wired
+### Step 7.3: Client data entry (Wisetrack replacement) ✅ DONE
+- [x] Profile tab on client detail page with edit form
+- [x] Fields: Contact Name, Email, Phone, Industry, Notes
+- [x] Creates profile on first save (upsert via `createClientProfile`)
+- [x] Edits existing profile on subsequent saves
+- [x] "Set Up Client Profile" prompt for new clients without profiles
+- [x] "Last updated" timestamp shown
+- [x] API: PUT /api/clients/:id auto-creates or updates
 > Fulfills: D3, D5, I3
 
 ---
