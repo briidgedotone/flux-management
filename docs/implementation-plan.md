@@ -113,16 +113,18 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 - [x] Average resolution time (154h)
 > Fulfills: K1, K2
 
-### Step 3.5: 30-day ticket trends ❌ NOT DONE
-- [ ] PRD asks for "visibility into rolling 30-day trends" (M8)
-- [ ] Need chart data endpoint that returns daily ticket open/closed counts for 30 days
-- [ ] Wire to dashboard chart area (currently shows empty state message)
+### Step 3.5: 30-day ticket trends ✅ DONE
+- [x] Chart data endpoint: `GET /api/tickets/chart-data?range=30d`
+- [x] Returns daily created/resolved counts via `generate_series`
+- [x] Wired to dashboard chart with 30-day toggle
 > Fulfills: M8
 
-### Step 3.6: 7-day ticket activity chart ❌ NOT DONE
-- [ ] PRD asks for "ticket activity metrics, displayed on a 7-day rolling chart for actionable insights" (M9)
-- [ ] `getTicketChartData()` query module exists but returns data from `generate_series` — needs to be wired to the dashboard chart component
-- [ ] Replace the empty state message with actual Recharts visualization
+### Step 3.6: 7-day ticket activity chart ✅ DONE
+- [x] Chart data endpoint: `GET /api/tickets/chart-data?range=7d`
+- [x] Hook: `useTicketChartData(range)`
+- [x] Recharts BarChart on dashboard: created (red) vs resolved (green) bars
+- [x] Range toggle: 7 Days / 30 Days / 90 Days
+- [x] Real data from database with `is_active=true` filter
 > Fulfills: M9
 
 ---
@@ -169,25 +171,24 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 
 > PRD SHOULD-HAVE: "Display of detailed tech stack information for each client"
 
-### Step 5.1: Tech stack query module ❌ NOT DONE
-- [ ] Read from shared tables: `software_subscriptions`, `infrastructure_items`, `cloud_services`
-- [ ] These tables already exist (client portal created them) and have data
-- [ ] Need cross-org query module (similar to tickets/projects pattern)
+### Step 5.1: Tech stack query module ✅ DONE
+- [x] `listSoftwareSubscriptions(clientId?)`, `listInfrastructureItems(clientId?)`, `listCloudServices(clientId?)`
+- [x] `getTechStackStats()` — summary counts
+- [x] All queries include `WHERE o.is_active = true`
 > Fulfills: M5, K5
 
-### Step 5.2: Tech stack page ❌ NOT DONE
-- [ ] New page: `/tech-stack` or per-client tech stack tab
-- [ ] Show software subscriptions (name, licenses, cost, renewal, status)
-- [ ] Show infrastructure items (devices, status)
-- [ ] Show cloud services (provider, tier, usage)
-- [ ] PRD says "for each client" — show per-client breakdown
+### Step 5.2: Tech stack page ✅ DONE
+- [x] New page at `/tech-stack` with sidebar nav link (StackIcon)
+- [x] 3 KPI cards: Software, Infrastructure, Cloud counts
+- [x] 3 data tables with per-client breakdown, status badges, empty states
+- [x] API: `GET /api/tech-stack?clientId=`
+- [x] Hook: `useTechStack(clientId?)`
 > Fulfills: M5, K5, D3
 
-### Step 5.3: Tech stack health indicators ❌ NOT DONE
-- [ ] PRD KPI: "Tech stack health indicators"
-- [ ] Show expiring subscriptions, offline devices, high-usage cloud services
-- [ ] Add to dashboard or client detail page
-> Fulfills: K5
+### Step 5.3: Tech stack health indicators ⚠️ PARTIAL
+- [x] Stats endpoint returns expiring/offline counts
+- [ ] Not yet surfaced as KPI on dashboard
+> Fulfills: K5 — partially
 
 ---
 
@@ -213,23 +214,22 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 ### Step 6.4: Active projects carousel ✅ DONE
 - [x] Scrollable project cards with progress bars
 
-### Step 6.5: Ticket activity chart ❌ NOT DONE
-- [ ] PRD specifically asks for this (M9, U8)
-- [ ] Currently shows empty state message
-- [ ] Need to wire `getTicketChartData()` to Recharts ComposedChart
-- [ ] 7-day rolling chart showing tickets opened vs closed per day
+### Step 6.5: Ticket activity chart ✅ DONE
+- [x] Wired `getTicketChartData()` to Recharts BarChart on dashboard
+- [x] Created (red) vs Resolved (green) bars per day
+- [x] 7d/30d/90d range toggle
+- [x] Real data from API with `is_active=true` filter
 > Fulfills: M9, U8
 
-### Step 6.6: Remove fake sparkline charts ❌ NOT DONE
-- [ ] Dashboard sparklines show hardcoded static data (not from any API)
-- [ ] Either wire to real data or remove entirely
-- [ ] Current state breaks trust — looks like real trends but isn't
+### Step 6.6: Remove fake sparkline charts ✅ DONE
+- [x] Removed all 3 hardcoded sparkline data arrays
+- [x] Removed AreaChart components from all 3 KPI panels
+- [x] No more fake trend data on dashboard
 
-### Step 6.7: Remove/relabel non-PRD metrics from dashboard ❌ NOT DONE
-- [ ] Revenue ($70K) — not in PRD, seeded data shown as real
-- [ ] Utilization (80%) — not in PRD, default seed value shown as metric
-- [ ] Either remove these panels or clearly label as "manually managed"
-- [ ] Decision needed: discuss with Brandon whether he wants these
+### Step 6.7: Remove/relabel non-PRD metrics from dashboard ✅ DONE
+- [x] Revenue panel ($70K) → replaced with "Clients" panel (count + total tickets)
+- [x] Utilization (80%) → removed from projects panel
+- [x] Dashboard now shows only PRD-aligned data: clients, tickets, projects
 
 ---
 

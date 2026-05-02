@@ -10,6 +10,7 @@ import {
   KanbanIcon,
   UsersThreeIcon,
   ChartLineIcon,
+  StackIcon,
   PlugIcon,
   RobotIcon,
   GearSixIcon,
@@ -26,6 +27,7 @@ const mainNav = [
   { href: "/tickets", icon: TicketIcon, label: "Tickets" },
   { href: "/projects", icon: KanbanIcon, label: "Projects" },
   { href: "/team", icon: UsersThreeIcon, label: "Team" },
+  { href: "/tech-stack", icon: StackIcon, label: "Tech Stack" },
   { href: "/reports", icon: ChartLineIcon, label: "Reports" },
   { href: "/connectors", icon: PlugIcon, label: "Connectors" },
 ];
