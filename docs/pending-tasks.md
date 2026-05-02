@@ -19,14 +19,10 @@
 - **Status:** Still pending from original client portal implementation plan
 - **Effort:** 4-6 hours
 
-### Task 5: Trigger critical ticket notification during Atera sync
+### Task 5: Trigger critical ticket notification during Atera sync ✅ DONE
 - **Codebase:** `Flux-client`
-- **What:** During `syncAteraTickets()`, when a new ticket with priority "Critical" is synced (INSERT, not UPDATE), create a notification + send email to management users.
-- **How:** After the upsert, check if it was an INSERT (new ticket). If priority is Critical, call management portal's notification endpoint or directly insert into `management_notifications` table (shared DB).
-- **Notify:** All users with role `co-ceo` or `director` and `is_active = true`
-- **Notification:** type: `ticket_escalation`, title: "Critical: {subject}", link: `/tickets`
-- **Email:** Use existing `ticketEscalationEmail` template via Graph API Mail.Send
-- **Effort:** 2-3 hours
+- **What:** During Atera sync, new Critical tickets trigger in-app notifications (management_notifications table) + email alerts to all co-ceo/director users
+- **Non-blocking:** Notification failures don't break the sync
 
 ### Task 6: Wire marketing website contact form to management portal webhook ✅ DONE
 - **Codebase:** `flux-app` (marketing website)
