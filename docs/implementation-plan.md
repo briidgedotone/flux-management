@@ -319,12 +319,15 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 - [ ] flux-app contact form not yet configured to call this endpoint (Task 6 in pending-tasks.md)
 > Fulfills: I5, D4, D9, R4
 
-### Step 9.4: Weekly summary reports ⚠️ PARTIAL
+### Step 9.4: Weekly summary reports ✅ DONE
 - [x] Manual report generation built — "Full Management Summary" report on Reports page
 - [x] Generates combined ticket + project summary with time range selector
 - [x] Print/download via browser print
-- [ ] Automated weekly email digest not yet built (needs scheduled job)
-> Fulfills: U11, A4, R5 — partially
+- [x] Automated weekly email digest: GET /api/cron/weekly-digest (CRON_SECRET auth)
+- [x] HTML email template with ticket stats, project stats, critical alerts
+- [x] Sends to all co-ceo/director users
+- [x] Tests for email template rendering (6 tests)
+> Fulfills: U11, A4, R5
 
 ### Step 9.5: Critical issue notifications — DEFERRED TO CLIENT PORTAL
 - [ ] Trigger point is during Atera sync (client portal codebase)
