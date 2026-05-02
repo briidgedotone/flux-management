@@ -20,6 +20,7 @@ import { useDashboard } from "@/hooks/use-dashboard";
 import { useTickets, useTicketChartData } from "@/hooks/use-tickets";
 import { useProjects } from "@/hooks/use-projects";
 import { useAuth } from "@/hooks/use-auth";
+import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Ticket } from "@/data/types";
 import { cn } from "@/lib/utils";
 
@@ -45,9 +46,10 @@ export default function DashboardPage() {
   const [syncing, setSyncing] = useState(false);
 
   const { data: auth } = useAuth();
+  const { clientId, clientName, isFiltered } = useClientFilter();
   const { data: dashboard, isLoading } = useDashboard();
-  const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc" });
-  const { data: projectsData } = useProjects({ limit: 10, sort: "created_at", order: "desc" });
+  const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc", clientId: clientId ?? undefined });
+  const { data: projectsData } = useProjects({ limit: 10, sort: "created_at", order: "desc", clientId: clientId ?? undefined });
   const { data: chartData } = useTicketChartData(chartRange);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ticketChartData: any[] = (chartData as any[]) ?? [];
@@ -75,7 +77,7 @@ export default function DashboardPage() {
             Good morning{auth?.name ? `, ${auth.name.split(" ")[0]}` : ""}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">
-            Here&apos;s your management overview
+            {isFiltered ? `Viewing ${clientName}` : "Here's your management overview"}
           </p>
         </div>
         <div className="flex items-center gap-3 text-text-muted">

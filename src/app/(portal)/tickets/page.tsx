@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { TicketIcon, MagnifyingGlassIcon, FunnelIcon } from "@phosphor-icons/react";
 import { useTickets } from "@/hooks/use-tickets";
+import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Ticket, TicketStatus, TicketPriority } from "@/data/types";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
@@ -19,11 +20,13 @@ export default function TicketsPage() {
   const [clientFilter, setClientFilter] = useState("All");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Ticket | null>(null);
+  const { clientId, clientName, isFiltered } = useClientFilter();
 
   const { data: ticketsResp, isLoading } = useTickets({
     search: search || undefined,
     status: statusFilter !== "All" ? statusFilter : undefined,
     priority: priorityFilter !== "All" ? priorityFilter : undefined,
+    clientId: clientId ?? undefined,
     page,
     limit: PER_PAGE,
     sort: "created_at",
@@ -40,7 +43,7 @@ export default function TicketsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tickets" subtitle="All client tickets" />
+      <PageHeader title="Tickets" subtitle={isFiltered ? `Showing tickets for ${clientName}` : "All client tickets"} />
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">

@@ -14,6 +14,7 @@ import {
   DotsThreeVerticalIcon,
 } from "@phosphor-icons/react";
 import { useProjects } from "@/hooks/use-projects";
+import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Project, ProjectStatus } from "@/data/types";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -67,7 +68,8 @@ function pct(value: number, earliest: number, span: number) {
 /* ------------------------------------------------------------------ */
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
-  const { data: rawData, isLoading, error } = useProjects();
+  const { clientId, clientName, isFiltered } = useClientFilter();
+  const { data: rawData, isLoading, error } = useProjects(clientId ? { clientId } : {});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const projects: any[] = (rawData as any)?.data ?? [];
 

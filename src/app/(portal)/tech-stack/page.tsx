@@ -10,6 +10,7 @@ import {
   WifiHighIcon,
 } from "@phosphor-icons/react";
 import { useTechStack } from "@/hooks/use-tech-stack";
+import { useClientFilter } from "@/hooks/use-client-filter";
 import { PageHeader } from "@/components/shared/page-header";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,8 @@ const statusColors: Record<string, { icon: typeof CheckCircleIcon; color: string
 };
 
 export default function TechStackPage() {
-  const { data: rawData, isLoading, error } = useTechStack();
+  const { clientId, clientName, isFiltered } = useClientFilter();
+  const { data: rawData, isLoading, error } = useTechStack(clientId ?? undefined);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = rawData as any;
   const software: any[] = data?.software ?? [];
@@ -35,7 +37,7 @@ export default function TechStackPage() {
     <div className="space-y-6">
       <PageHeader
         title="Tech Stack"
-        subtitle="Software, infrastructure, and cloud services across all clients"
+        subtitle={isFiltered ? `Tech stack for ${clientName}` : "Software, infrastructure, and cloud services across all clients"}
       />
 
       {/* KPI Cards */}
