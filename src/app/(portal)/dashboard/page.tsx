@@ -8,6 +8,7 @@ import {
   ShieldCheckIcon, CaretRightIcon,
   ArrowsClockwiseIcon, CalendarBlankIcon, PlusIcon, ExportIcon,
   RobotIcon, ArrowUpIcon, ArrowDownIcon,
+  StackIcon, DesktopIcon, CloudIcon,
 } from "@phosphor-icons/react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -19,6 +20,7 @@ import { TicketSlideOver } from "@/components/shared/ticket-slide-over";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useTickets, useTicketChartData } from "@/hooks/use-tickets";
 import { useProjects } from "@/hooks/use-projects";
+import { useTechStack } from "@/hooks/use-tech-stack";
 import { useAuth } from "@/hooks/use-auth";
 import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Ticket } from "@/data/types";
@@ -51,6 +53,9 @@ export default function DashboardPage() {
   const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc", clientId: clientId ?? undefined });
   const { data: projectsData } = useProjects({ limit: 10, sort: "created_at", order: "desc", clientId: clientId ?? undefined });
   const { data: chartData } = useTicketChartData(chartRange);
+  const { data: techStackRaw } = useTechStack(clientId ?? undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const techStats = (techStackRaw as any)?.stats;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ticketChartData: any[] = (chartData as any[]) ?? [];
 
@@ -192,6 +197,49 @@ export default function DashboardPage() {
           </div>
         </button>
       </motion.div>
+
+      {/* Tech Stack Health — only shown when there's data */}
+      {techStats && (techStats.software.total > 0 || techStats.infrastructure.total > 0 || techStats.cloud.total > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-10 flex items-center justify-center">
+              <StackIcon size={18} weight="light" className="text-blue" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{techStats.software.total} software</p>
+              <p className="text-xs text-text-muted">
+                {techStats.software.expiring > 0
+                  ? <span className="text-warning">{techStats.software.expiring} expiring soon</span>
+                  : "All active"
+                }
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-success-tint flex items-center justify-center">
+              <DesktopIcon size={18} weight="light" className="text-success" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{techStats.infrastructure.total} devices</p>
+              <p className="text-xs text-text-muted">
+                {techStats.infrastructure.offline > 0
+                  ? <span className="text-error">{techStats.infrastructure.offline} offline</span>
+                  : "All online"
+                }
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-10 flex items-center justify-center">
+              <CloudIcon size={18} weight="light" className="text-blue" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{techStats.cloud.total} cloud services</p>
+              <p className="text-xs text-text-muted">{techStats.cloud.active} active</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -185,10 +185,10 @@ Each step references the PRD requirement it fulfills (from `prd-vs-reality-audit
 - [x] Hook: `useTechStack(clientId?)`
 > Fulfills: M5, K5, D3
 
-### Step 5.3: Tech stack health indicators ⚠️ PARTIAL
+### Step 5.3: Tech stack health indicators ✅ DONE
 - [x] Stats endpoint returns expiring/offline counts
-- [ ] Not yet surfaced as KPI on dashboard
-> Fulfills: K5 — partially
+- [x] Dashboard shows software/devices/cloud health cards (conditional on data)
+> Fulfills: K5
 
 ---
 
