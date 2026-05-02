@@ -102,27 +102,30 @@ export default function DashboardPage() {
         role="region"
         aria-label="Key metrics overview"
       >
-        {/* Panel 1: Clients & Revenue */}
+        {/* Panel 1: Clients Overview */}
         <button
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/clients")}
-          aria-label={`Revenue $${d ? (d.revenue.totalMonthly / 1000).toFixed(1) : "—"}K. ${d?.revenue.clientCount ?? 0} clients. Click to view clients.`}
+          aria-label={`${d?.revenue.clientCount ?? 0} active clients. ${d?.tickets.total ?? 0} total tickets. Click to view clients.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  ${d ? (d.revenue.totalMonthly / 1000).toFixed(1) : "—"}K
+                  {d?.revenue.clientCount ?? "—"}
                 </span>
+                <span className="text-[12px] text-text-muted">active clients</span>
               </div>
-              <span className="text-[11px] text-text-muted">Monthly Revenue</span>
+              <span className="text-[11px] text-text-muted">
+                {d?.tickets.total ?? 0} total tickets across all clients
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <BuildingsIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">{d?.revenue.clientCount ?? 0}</span>
-            <span className="text-text-muted">active clients</span>
+            <span className="font-semibold text-text-primary">{d?.tickets.resolvedLast30d ?? 0}</span>
+            <span className="text-text-muted">tickets resolved this month</span>
           </div>
         </button>
 
@@ -180,10 +183,6 @@ export default function DashboardPage() {
             <UsersThreeIcon size={13} weight="light" className="text-text-muted" />
             <span className="font-semibold text-text-primary">{d?.team.totalMembers ?? 0}</span>
             <span className="text-text-muted">team members</span>
-            <span aria-hidden="true">&middot;</span>
-            <span className="text-text-secondary font-medium">
-              {d?.team.avgUtilization ?? 0}% utilized
-            </span>
           </div>
         </button>
       </motion.div>
