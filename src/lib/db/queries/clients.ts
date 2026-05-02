@@ -39,21 +39,14 @@ export async function listClients(filters: ClientListFilters = {}) {
     order = "asc",
   } = filters;
 
-  const conditions: string[] = ["o.is_active = true"]; // R11
+  // Exclude Flux Technologies (the MSP itself, not a client) and test org
+  const conditions: string[] = ["o.is_active = true", "o.slug != 'flux'"]; // R11 + exclude self
   const params: unknown[] = [];
   let idx = 1;
 
   if (industry) {
     conditions.push(`cp.industry = $${idx++}`);
     params.push(industry);
-  }
-  if (healthScore) {
-    conditions.push(`cp.health_score = $${idx++}`);
-    params.push(healthScore);
-  }
-  if (contractStatus) {
-    conditions.push(`cp.contract_status = $${idx++}`);
-    params.push(contractStatus);
   }
   if (search) {
     conditions.push(`o.name ILIKE $${idx++}`);
@@ -65,41 +58,32 @@ export async function listClients(filters: ClientListFilters = {}) {
   const sortOrder = order === "desc" ? "DESC" : "ASC";
   const offset = (page - 1) * limit;
 
-  // Count query — INNER JOIN excludes orgs without a client_profile (e.g., Flux Technologies itself)
+  // Count — LEFT JOIN so new orgs without profiles still appear
   const countResult = await query<{ count: string }>(
     `SELECT COUNT(*) FROM organizations o
-     JOIN client_profiles cp ON o.id = cp.organization_id
+     LEFT JOIN client_profiles cp ON o.id = cp.organization_id
      WHERE ${whereClause}`,
     params,
   );
   const total = parseInt(countResult.rows[0].count, 10);
 
-  // Data query with ticket/project counts and SLA
+  // Data query — LEFT JOIN, no scope creep fields (revenue, health, contract, SLA removed)
   params.push(limit, offset);
   const dataResult = await query(
     `SELECT
        o.id,
        o.name AS company_name,
        cp.industry,
-       cp.monthly_revenue,
-       cp.contract_status,
-       cp.contract_start_date,
-       cp.health_score,
-       cp.sla_target,
        cp.primary_contact_name,
        cp.primary_contact_email,
        cp.primary_contact_phone,
+       cp.notes,
        (SELECT COUNT(*) FROM tickets t WHERE t.organization_id = o.id AND t.status != 'Closed') AS open_tickets,
        (SELECT COUNT(*) FROM projects p WHERE p.organization_id = o.id AND p.status != 'Completed') AS active_projects,
-       (SELECT COALESCE(
-         ROUND(
-           COUNT(*) FILTER (WHERE t2.resolution_time_hours IS NOT NULL AND t2.resolution_time_hours <= 24) * 100.0
-           / NULLIF(COUNT(*) FILTER (WHERE t2.resolution_time_hours IS NOT NULL), 0)
-         , 0)
-       , 0) FROM tickets t2 WHERE t2.organization_id = o.id) AS sla_compliance,
-       (SELECT MAX(t3.updated_at) FROM tickets t3 WHERE t3.organization_id = o.id) AS last_activity
+       (SELECT MAX(t3.updated_at) FROM tickets t3 WHERE t3.organization_id = o.id) AS last_activity,
+       CASE WHEN cp.id IS NOT NULL THEN true ELSE false END AS has_profile
      FROM organizations o
-     JOIN client_profiles cp ON o.id = cp.organization_id
+     LEFT JOIN client_profiles cp ON o.id = cp.organization_id
      WHERE ${whereClause}
      ORDER BY ${sortCol} ${sortOrder}
      LIMIT $${idx++} OFFSET $${idx++}`,
@@ -115,14 +99,11 @@ export async function listClients(filters: ClientListFilters = {}) {
       phone: r.primary_contact_phone ?? undefined,
     },
     industry: r.industry ?? "",
-    contractStatus: r.contract_status ?? "active",
-    contractStartDate: r.contract_start_date?.toISOString?.() ?? "",
-    healthScore: r.health_score ?? "healthy",
-    monthlyRevenue: parseFloat(r.monthly_revenue) || 0,
+    notes: r.notes ?? "",
     lastActivity: r.last_activity?.toISOString?.() ?? "",
     openTickets: parseInt(r.open_tickets, 10),
     activeProjects: parseInt(r.active_projects, 10),
-    slaCompliance: parseInt(r.sla_compliance, 10),
+    hasProfile: r.has_profile,
   }));
 
   return { data, total, page, limit };
@@ -137,12 +118,6 @@ export async function getClient(clientId: string) {
        o.slug,
        cp.id AS profile_id,
        cp.industry,
-       cp.monthly_revenue,
-       cp.contract_status,
-       cp.contract_start_date,
-       cp.contract_end_date,
-       cp.health_score,
-       cp.sla_target,
        cp.primary_contact_name,
        cp.primary_contact_email,
        cp.primary_contact_phone,
@@ -165,19 +140,14 @@ export async function getClient(clientId: string) {
     companyName: r.company_name,
     slug: r.slug,
     profileId: r.profile_id,
-    industry: r.industry,
-    monthlyRevenue: parseFloat(r.monthly_revenue) || 0,
-    contractStatus: r.contract_status,
-    contractStartDate: r.contract_start_date?.toISOString?.() ?? null,
-    contractEndDate: r.contract_end_date?.toISOString?.() ?? null,
-    healthScore: r.health_score,
-    slaTarget: r.sla_target,
+    hasProfile: !!r.profile_id,
+    industry: r.industry ?? "",
     primaryContact: {
       name: r.primary_contact_name ?? "",
       email: r.primary_contact_email ?? "",
       phone: r.primary_contact_phone ?? undefined,
     },
-    notes: r.notes,
+    notes: r.notes ?? "",
     openTickets: parseInt(r.open_tickets, 10),
     activeProjects: parseInt(r.active_projects, 10),
     createdAt: r.created_at?.toISOString?.() ?? null,
@@ -185,16 +155,39 @@ export async function getClient(clientId: string) {
   };
 }
 
-/** Update client profile fields. [R15: parameterized, R17: no SELECT *] */
+/** Create a client profile for an org that doesn't have one yet. */
+export async function createClientProfile(
+  organizationId: string,
+  data: {
+    primaryContactName?: string;
+    primaryContactEmail?: string;
+    primaryContactPhone?: string;
+    industry?: string;
+    notes?: string;
+  },
+) {
+  const result = await query(
+    `INSERT INTO client_profiles (organization_id, primary_contact_name, primary_contact_email, primary_contact_phone, industry, notes)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (organization_id) DO UPDATE SET
+       primary_contact_name = COALESCE(EXCLUDED.primary_contact_name, client_profiles.primary_contact_name),
+       primary_contact_email = COALESCE(EXCLUDED.primary_contact_email, client_profiles.primary_contact_email),
+       primary_contact_phone = COALESCE(EXCLUDED.primary_contact_phone, client_profiles.primary_contact_phone),
+       industry = COALESCE(EXCLUDED.industry, client_profiles.industry),
+       notes = COALESCE(EXCLUDED.notes, client_profiles.notes),
+       updated_at = now()
+     RETURNING id, organization_id, industry, primary_contact_name, primary_contact_email,
+       primary_contact_phone, notes, updated_at`,
+    [organizationId, data.primaryContactName ?? null, data.primaryContactEmail ?? null,
+     data.primaryContactPhone ?? null, data.industry ?? null, data.notes ?? null],
+  );
+  return result.rows[0] ?? null;
+}
+
+/** Update client profile fields. [R15: parameterized] */
 export async function updateClientProfile(
   clientId: string,
   data: {
-    monthlyRevenue?: number;
-    contractStatus?: string;
-    contractStartDate?: string;
-    contractEndDate?: string;
-    healthScore?: string;
-    slaTarget?: number;
     primaryContactName?: string;
     primaryContactEmail?: string;
     primaryContactPhone?: string;
@@ -207,12 +200,6 @@ export async function updateClientProfile(
   let idx = 1;
 
   const fieldMap: Record<string, string> = {
-    monthlyRevenue: "monthly_revenue",
-    contractStatus: "contract_status",
-    contractStartDate: "contract_start_date",
-    contractEndDate: "contract_end_date",
-    healthScore: "health_score",
-    slaTarget: "sla_target",
     primaryContactName: "primary_contact_name",
     primaryContactEmail: "primary_contact_email",
     primaryContactPhone: "primary_contact_phone",
@@ -236,8 +223,7 @@ export async function updateClientProfile(
   const result = await query(
     `UPDATE client_profiles SET ${fields.join(", ")}
      WHERE organization_id = $${idx}
-     RETURNING id, organization_id, industry, monthly_revenue, contract_status,
-       health_score, sla_target, primary_contact_name, primary_contact_email,
+     RETURNING id, organization_id, industry, primary_contact_name, primary_contact_email,
        primary_contact_phone, notes, updated_at`,
     params,
   );

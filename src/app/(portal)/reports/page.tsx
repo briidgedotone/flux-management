@@ -91,12 +91,11 @@ export default function ReportsPage() {
   // Override hardcoded stats with real data from dashboard API
   const dynamicStats: Record<string, string> = {};
   if (d) {
-    dynamicStats["/reports/revenue"] = `$${(d.revenue.totalMonthly / 1000).toFixed(1)}K`;
-    dynamicStats["/reports/team-performance"] = `${d.team.avgUtilization}%`;
+    dynamicStats["/reports/ticket-analytics"] = `${d.tickets.avgResolutionHours.toFixed(1)}h`;
     dynamicStats["/reports/sla-compliance"] = d.tickets.createdLast30d > 0
       ? `${Math.round((d.tickets.resolvedLast30d / d.tickets.createdLast30d) * 100)}%`
       : "—";
-    dynamicStats["/reports/ticket-analytics"] = `${d.tickets.avgResolutionHours.toFixed(1)}h`;
+    dynamicStats["/reports/team-performance"] = `${d.team.totalMembers} members`;
   }
 
   return (

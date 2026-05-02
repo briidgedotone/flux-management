@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { withManagementAuth, withRole } from "@/lib/auth/middleware";
 import { successResponse, Errors } from "@/lib/api/response";
 import { clientIdSchema, clientUpdateSchema } from "@/lib/validators/clients";
-import { getClient, updateClientProfile } from "@/lib/db/queries/clients";
+import { getClient, updateClientProfile, createClientProfile } from "@/lib/db/queries/clients";
 import { logActivity } from "@/lib/db/queries/activity-log";
 
 export async function GET(
@@ -43,8 +43,12 @@ export async function PUT(
       const body = clientUpdateSchema.safeParse(await request.json());
       if (!body.success) return Errors.VALIDATION(body.error.issues[0].message);
 
-      const result = await updateClientProfile(parsed.data.id, body.data);
-      if (!result) return Errors.NOT_FOUND();
+      // Try update first, if no profile exists, create one
+      let result = await updateClientProfile(parsed.data.id, body.data);
+      if (!result) {
+        result = await createClientProfile(parsed.data.id, body.data);
+      }
+      if (!result) return Errors.INTERNAL();
 
       // R29: Audit log
       await logActivity(

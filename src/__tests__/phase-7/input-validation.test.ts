@@ -14,16 +14,16 @@ import { profileUpdateSchema } from "@/lib/validators/settings";
 describe("Input Validation (R16)", () => {
   describe("Client schemas", () => {
     it("clientListSchema accepts valid filters", () => {
-      const result = clientListSchema.safeParse({ page: "1", limit: "10", healthScore: "healthy" });
+      const result = clientListSchema.safeParse({ page: "1", limit: "10", industry: "Technology" });
       expect(result.success).toBe(true);
     });
-    it("clientListSchema rejects invalid healthScore", () => {
-      const result = clientListSchema.safeParse({ healthScore: "invalid" });
-      expect(result.success).toBe(false);
+    it("clientListSchema accepts search", () => {
+      const result = clientListSchema.safeParse({ search: "Armada" });
+      expect(result.success).toBe(true);
     });
-    it("clientUpdateSchema rejects slaTarget > 100", () => {
-      const result = clientUpdateSchema.safeParse({ slaTarget: 150 });
-      expect(result.success).toBe(false);
+    it("clientUpdateSchema accepts valid profile data", () => {
+      const result = clientUpdateSchema.safeParse({ primaryContactName: "John", industry: "Tech" });
+      expect(result.success).toBe(true);
     });
   });
 

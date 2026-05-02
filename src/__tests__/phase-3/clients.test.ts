@@ -31,12 +31,9 @@ describe("Client Queries", () => {
         expect(client).toHaveProperty("companyName");
         expect(client).toHaveProperty("primaryContact");
         expect(client).toHaveProperty("industry");
-        expect(client).toHaveProperty("contractStatus");
-        expect(client).toHaveProperty("healthScore");
-        expect(client).toHaveProperty("monthlyRevenue");
         expect(client).toHaveProperty("openTickets");
         expect(client).toHaveProperty("activeProjects");
-        expect(client).toHaveProperty("slaCompliance");
+        expect(client).toHaveProperty("hasProfile");
       }
     });
 
@@ -64,7 +61,7 @@ describe("Client Queries", () => {
         expect(detail).not.toBeNull();
         expect(detail!.companyName).toBe(list.data[0].companyName);
         expect(detail).toHaveProperty("notes");
-        expect(detail).toHaveProperty("slaTarget");
+        expect(detail).toHaveProperty("hasProfile");
       }
     });
 

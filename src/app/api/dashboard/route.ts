@@ -1,6 +1,5 @@
 // GET /api/dashboard — Combined management KPIs
-// Security: withManagementAuth [R23]
-// All aggregations filter is_active=true via query modules [R11]
+// PRD W5: "Dashboard displays IT health, project timelines, and operational metrics"
 
 import { NextRequest } from "next/server";
 import { withManagementAuth } from "@/lib/auth/middleware";
@@ -8,37 +7,21 @@ import { successResponse, Errors } from "@/lib/api/response";
 import { listClients } from "@/lib/db/queries/clients";
 import { getTicketStats } from "@/lib/db/queries/tickets";
 import { getProjectStats } from "@/lib/db/queries/projects";
-import { getRevenueReport } from "@/lib/db/queries/reports";
 import { listTeamMembers } from "@/lib/db/queries/team";
 
 export async function GET(request: NextRequest) {
   return withManagementAuth(request, async () => {
     try {
-      // Run all queries in parallel for performance
-      const [clients, tickets, projects, revenue, team] = await Promise.all([
+      const [clients, tickets, projects, team] = await Promise.all([
         listClients({ limit: 100 }),
         getTicketStats({ range: "30d" }),
         getProjectStats(),
-        getRevenueReport(),
         listTeamMembers(),
       ]);
 
-      // Client health summary
-      const healthSummary = {
-        healthy: clients.data.filter((c) => c.healthScore === "healthy").length,
-        atRisk: clients.data.filter((c) => c.healthScore === "at-risk").length,
-        critical: clients.data.filter((c) => c.healthScore === "critical").length,
-      };
-
-      // Team utilization snapshot
-      const avgUtilization = team.length > 0
-        ? Math.round(team.reduce((sum, m) => sum + m.utilizationTarget, 0) / team.length)
-        : 0;
-
       return successResponse({
-        revenue: {
-          totalMonthly: revenue.totalRevenue,
-          clientCount: revenue.clientCount,
+        clients: {
+          total: clients.total,
         },
         tickets: {
           total: tickets.total,
@@ -57,10 +40,8 @@ export async function GET(request: NextRequest) {
           delayed: projects.delayed,
           avgProgress: projects.avgProgress,
         },
-        clientHealth: healthSummary,
         team: {
           totalMembers: team.length,
-          avgUtilization,
         },
       });
     } catch (err) {

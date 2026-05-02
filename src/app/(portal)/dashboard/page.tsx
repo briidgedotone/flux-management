@@ -113,13 +113,13 @@ export default function DashboardPage() {
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/clients")}
-          aria-label={`${d?.revenue.clientCount ?? 0} active clients. ${d?.tickets.total ?? 0} total tickets. Click to view clients.`}
+          aria-label={`${d?.clients.total ?? 0} active clients. ${d?.tickets.total ?? 0} total tickets. Click to view clients.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  {d?.revenue.clientCount ?? "—"}
+                  {d?.clients.total ?? "—"}
                 </span>
                 <span className="text-[12px] text-text-muted">active clients</span>
               </div>
