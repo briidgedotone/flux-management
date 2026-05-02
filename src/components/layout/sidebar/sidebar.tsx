@@ -14,6 +14,7 @@ import {
   ChartLineIcon,
   StackIcon,
   PlugIcon,
+  EnvelopeOpenIcon,
   RobotIcon,
   GearSixIcon,
   XIcon,
@@ -32,6 +33,7 @@ const mainNav = [
   { href: "/team", icon: UsersThreeIcon, label: "Team" },
   { href: "/tech-stack", icon: StackIcon, label: "Tech Stack" },
   { href: "/reports", icon: ChartLineIcon, label: "Reports" },
+  { href: "/contact-submissions", icon: EnvelopeOpenIcon, label: "Leads" },
   { href: "/connectors", icon: PlugIcon, label: "Connectors" },
 ];
 
