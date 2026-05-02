@@ -931,46 +931,79 @@ export {};
 
 ## Progress Summary
 
-> **Last updated:** April 25, 2026
+> **Last updated:** May 2, 2026
 
 | Phase | Steps | Done | Status |
 |-------|-------|------|--------|
 | 0. Pre-Implementation Setup | 6 | 6 | ✅ Complete |
 | 1. Database Foundation | 6 | 6 | ✅ Complete |
 | 2. Authentication | 6 | 6 | ✅ Complete (Azure AD SSO working) |
-| 3. Database Query Modules | 11 | 11 | ✅ Complete (12 query modules, 111 tests, all pass) |
-| 4. API Routes | 12 | 12 | ✅ Complete (30+ endpoints, all with auth middleware + Zod validation) |
-| 5. Integrations | 4 | 4 | ✅ Complete (Planner write-back, Claude AI, email sender, webhook) |
-| 6. Frontend Integration | 13 | 11 | 🟡 Steps 6.9 (reports wiring) and 6.13 (mock cleanup) pending |
+| 3. Database Query Modules | 11 | 11 | ✅ Complete (12 query modules, 154 tests) |
+| 4. API Routes | 12 | 12 | ✅ Complete (39 endpoints, all with auth + Zod) |
+| 5. Integrations | 4 | 4 | ✅ Complete (Planner write-back, Claude AI, email, webhook) |
+| 6. Frontend Integration | 13 | 12 | 🟡 Step 6.13 (mock cleanup) pending |
 | 7. Security Hardening | 5 | 5 | ✅ Complete (154 tests, security checklist passed) |
-| 8. Deployment | 6 | 1 | 🟡 Step 8.2 done (Azure AD). Steps 8.1, 8.3-8.5 unblocked. Step 8.6 after deploy. |
-| **Total** | **69** | **62** | **90% complete** |
+| 8. Deployment | 6 | 1 | 🟡 Step 8.2 done. Steps 8.1, 8.3-8.5 unblocked. |
+| **Total** | **69** | **63** | **91% complete** |
 
-### What's Complete
-- **Database:** 12 query modules covering all 24 tables, parameterized SQL, `is_active` filter on all cross-org queries
-- **Authentication:** Azure AD OAuth2 + PKCE, JWT sessions (`flux-management-session` cookie, no org ID), `withManagementAuth`/`withRole`/`withWebhookAuth` middleware, client role rejection, dev-login bypass
-- **API Routes:** 30+ endpoints — dashboard, clients (CRUD), tickets (list/detail/notes), projects (list/detail/task CRUD), team (list/detail/update), reports (4 types), AI chat, notifications, contact submissions, connectors, settings
-- **Integrations:** Planner task write-back (background, non-blocking), Claude AI with cross-org context builder, email sender via Graph API Mail.Send, contact form webhook
-- **Frontend:** React Query setup, 11 hooks (30+ exported functions), 9 of 12 pages wired to real APIs
-- **Testing:** 111 automated tests (session, middleware, auth routes, all query modules), R56 verified (no state leakage)
+### PRD Audit (May 2, 2026)
+
+**PRD Coverage: 38/38 planned endpoints built + 1 bonus (connectors)**
+
+| PRD Section | Status | Notes |
+|---|---|---|
+| §1 Architecture | ✅ Complete | Cross-org access, shared DB, middleware-only access control |
+| §2 Azure Infrastructure | ✅ 95% | App registered, consent granted. Vercel deployment unblocked. |
+| §3 Auth & Authorization | ✅ Complete | OAuth2 + PKCE, JWT sessions, withManagementAuth/withRole, client role blocked |
+| §4 Database Schema | ✅ Complete | 7 new tables + 17 shared = 24 total. UUID migration done. |
+| §5 API Routes (38 endpoints) | ✅ Complete | All 38 built + 1 bonus (connectors). Auth + Zod on all. |
+| §6 Integrations | ✅ Complete | Planner write-back, Claude AI, email sender, webhook receiver |
+| §7 AI Assistant | ✅ Complete | Cross-org context builder, management persona, real Claude API |
+| §8 Notification System | ✅ Complete | 6 notification types, in-app + email templates |
+| §9 Security | ✅ Complete | Parameterized SQL, no SELECT *, Zod, headers, audit logging, rate limits |
+| §10 Test Strategy | ✅ Complete | 154 tests, R56 verified, test org isolation, guards |
+
+### What's Built (complete)
+- **39 API endpoints** (38 planned + connectors bonus) — all with auth middleware + Zod validation
+- **12 query modules** covering all 24 tables — parameterized SQL, `is_active` filter on all cross-org queries
+- **Authentication** — Azure AD OAuth2 + PKCE, JWT in `flux-management-session` cookie (no org ID), SSO working
+- **3 middleware wrappers** — `withManagementAuth`, `withRole`, `withWebhookAuth`
+- **Integrations** — Planner task write-back (background, non-blocking), Claude AI with cross-org context, email via Graph API Mail.Send, contact form webhook
+- **11 React Query hooks** (30+ exported functions) — all pages wired to real APIs
+- **154 automated tests** — session, middleware, auth routes, all query modules, role access, is_active filter, audit logging, input validation
+- **Security hardening** — rate limiting (5 tiers), audit logging (7 mutations), error boundary, 404 page, security headers
+- **UUID migration** — all predictable seed IDs replaced with random UUIDs
+- **UI fixes** — sidebar/avatar wired to real user, ticket descriptions stripped of HTML, real team stats, Flux Technologies excluded from clients, SLA calculation fixed
+
+### What's NOT Built (from PRD)
+- **Nightly report snapshot job** — `report_snapshots` table + query module exist, but Azure Function scheduler not deployed. Similar to client portal's Step 4.8 (also pending).
+
+### What's Built But NOT in PRD
+- `GET /api/connectors` — integration health monitoring endpoint (practical addition)
+- `GET /api/auth/dev-login` — development testing bypass
+- Per-client connector breakdown on connectors page
+- Real technician team members added (Brandon Herring, Zach Grasberger, Andy Turner, Kayla Caldwell)
 
 ### What's Pending (can do now)
-- **Step 6.9:** Wire reports page to hooks
-- **Step 6.13:** Remove mock data files after all pages verified
-- **Phase 8:** Deploy to Vercel, run production migrations, seed data — all unblocked
+- **Step 6.13:** Remove mock data files
+- **Step 8.1:** Deploy to Vercel
+- **Step 8.3:** Run migrations 005-006 on production DB
+- **Step 8.4:** Seed production data
+- **Step 8.5:** Configure production env vars
+- **Step 8.6:** Post-deployment verification + merge
 
 ### What's Done (from Brandon)
 - **Azure AD app registration** (`flux-management-dev`) — created, admin consent granted (April 25, 2026)
 - **API permissions granted:** `User.Read`, `Tasks.ReadWrite.All`, `Sites.Read.All`, `Mail.Send`, `Group.Read.All`
 - **Azure AD SSO login** — tested and working on localhost:3001
 
-### What Was Thought Blocked But Is Actually Unblocked
-- **Production DATABASE_URL** — same shared DB as client portal (`flux-clientportal-prod-db.postgres.database.azure.com`, `fluxdb`). Credentials available from client portal setup.
-- **Migrations 005-006 on production** — can run ourselves with admin credentials
-- **Deployment platform** — Vercel (same as client portal). No Azure App Service needed.
-- **Production email sender** — use `development@flux.tech` for now (same as client portal dev)
+### What's Unblocked (was thought blocked)
+- **Production DATABASE_URL** — same shared DB as client portal (`flux-clientportal-prod-db.postgres.database.azure.com`, `fluxdb`)
+- **Migrations 005-006 on production** — can run with admin credentials
+- **Deployment** — Vercel (same as client portal). No Azure App Service needed.
+- **Email sender** — use `development@flux.tech` for now
 
-### What's Actually Still Blocked on Brandon
-- **M365 Group IDs** — which Planner plans map to which client orgs (blocks Planner write-back testing)
-- **Production domain + DNS** — need Brandon to configure DNS for management portal
-- **User role confirmation** — Brandon/Zack as `co-ceo`, Cameron as `director` or `employee`
+### What's Actually Blocked on Brandon (3 items)
+- **M365 Group IDs** — which Planner plans map to which client orgs (blocks Planner write-back testing only)
+- **Production domain + DNS** — custom domain for management portal (can use Vercel URL temporarily)
+- **User role confirmation** — Brandon/Zack as `co-ceo`, Cameron as `director` (applied locally, needs confirmation for production)
