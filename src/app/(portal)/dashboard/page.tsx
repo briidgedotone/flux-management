@@ -10,9 +10,7 @@ import {
   RobotIcon, ArrowUpIcon, ArrowDownIcon,
 } from "@phosphor-icons/react";
 import {
-  ComposedChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Line, CartesianGrid, Legend, PieChart, Pie, Cell,
-  AreaChart, Area,
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
 } from "recharts";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
@@ -24,16 +22,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { Ticket } from "@/data/types";
 import { cn } from "@/lib/utils";
 
-/* Sparkline data — static placeholders until chart endpoint is wired */
-const revenueSparkline = [
-  { v: 98 }, { v: 105 }, { v: 95 }, { v: 112 }, { v: 118 }, { v: 115 }, { v: 118.5 },
-];
-const ticketSparkline = [
-  { v: 8 }, { v: 12 }, { v: 10 }, { v: 14 }, { v: 11 }, { v: 9 }, { v: 10 },
-];
-const slaSparkline = [
-  { v: 94.2 }, { v: 95.1 }, { v: 93.8 }, { v: 95.6 }, { v: 96.2 }, { v: 95.8 }, { v: 96.2 },
-];
+/* Sparklines removed — were hardcoded fake data, not from any API */
 
 type ChartRange = "7d" | "30d" | "90d";
 const chartLabels: Record<ChartRange, string> = { "7d": "7 Days", "30d": "30 Days", "90d": "90 Days" };
@@ -129,19 +118,6 @@ export default function DashboardPage() {
               </div>
               <span className="text-[11px] text-text-muted">Monthly Revenue</span>
             </div>
-            <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueSparkline} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="revSpk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0D7C5F" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#0D7C5F" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#0D7C5F" strokeWidth={1.5} fill="url(#revSpk)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <BuildingsIcon size={13} weight="light" className="text-text-muted" />
@@ -168,19 +144,6 @@ export default function DashboardPage() {
               <span className="text-[11px] text-text-muted">
                 {d?.tickets.critical ?? 0} critical, {d?.tickets.pending ?? 0} pending
               </span>
-            </div>
-            <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={ticketSparkline} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="tkSpk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#C53030" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#C53030" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#C53030" strokeWidth={1.5} fill="url(#tkSpk)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
@@ -211,19 +174,6 @@ export default function DashboardPage() {
                   : "All on track"
                 }
               </span>
-            </div>
-            <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={slaSparkline} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="slaSpk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#15549D" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#15549D" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#15549D" strokeWidth={1.5} fill="url(#slaSpk)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
@@ -266,25 +216,7 @@ export default function DashboardPage() {
             <p className="text-sm text-text-muted">Ticket activity chart will appear once chart data is synced.</p>
             <p className="text-xs text-text-muted mt-1">{d ? `${d.tickets.createdLast30d} created, ${d.tickets.resolvedLast30d} resolved in the last 30 days` : ""}</p>
           </div>
-          {false && <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={[]} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ECEEF2" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#002B4D", border: "none", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
-                itemStyle={{ color: "#fff" }}
-                labelStyle={{ color: "#A3B8CC", marginBottom: "4px" }}
-              />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8}
-                formatter={(value: string) => <span className="text-xs text-text-muted capitalize">{value}</span>}
-              />
-              <Bar dataKey="open" stackId="tickets" fill="#C53030" radius={[0, 0, 0, 0]} barSize={24} />
-              <Bar dataKey="pending" stackId="tickets" fill="#B8860B" radius={[0, 0, 0, 0]} barSize={24} />
-              <Bar dataKey="closed" stackId="tickets" fill="#0D7C5F" radius={[2, 2, 0, 0]} barSize={24} />
-              <Line type="monotone" dataKey="total" stroke="#15549D" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>}
+          {/* Chart component will be added in Step 6.5 when ticket chart data is wired */}
         </div>
 
         {/* Projects by Status - 1 col */}
