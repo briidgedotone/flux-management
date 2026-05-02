@@ -11,12 +11,13 @@ import {
 } from "@phosphor-icons/react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
 import { TicketSlideOver } from "@/components/shared/ticket-slide-over";
 import { useDashboard } from "@/hooks/use-dashboard";
-import { useTickets } from "@/hooks/use-tickets";
+import { useTickets, useTicketChartData } from "@/hooks/use-tickets";
 import { useProjects } from "@/hooks/use-projects";
 import { useAuth } from "@/hooks/use-auth";
 import type { Ticket } from "@/data/types";
@@ -47,6 +48,9 @@ export default function DashboardPage() {
   const { data: dashboard, isLoading } = useDashboard();
   const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc" });
   const { data: projectsData } = useProjects({ limit: 10, sort: "created_at", order: "desc" });
+  const { data: chartData } = useTicketChartData(chartRange);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ticketChartData: any[] = (chartData as any[]) ?? [];
 
   const handleSync = () => {
     setSyncing(true);
@@ -211,11 +215,34 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <div className="flex flex-col items-center justify-center h-[220px] text-center">
-            <p className="text-sm text-text-muted">Ticket activity chart will appear once chart data is synced.</p>
-            <p className="text-xs text-text-muted mt-1">{d ? `${d.tickets.createdLast30d} created, ${d.tickets.resolvedLast30d} resolved in the last 30 days` : ""}</p>
-          </div>
-          {/* Chart component will be added in Step 6.5 when ticket chart data is wired */}
+          {ticketChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={ticketChartData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ECEEF2" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#8896A6" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                />
+                <YAxis tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#002B4D", border: "none", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
+                  labelFormatter={(v) => new Date(String(v)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8}
+                  formatter={(value: string) => <span className="text-xs text-text-muted capitalize">{value}</span>}
+                />
+                <Bar dataKey="created" name="Created" fill="#C53030" radius={[2, 2, 0, 0]} barSize={chartRange === "7d" ? 24 : chartRange === "30d" ? 10 : 4} />
+                <Bar dataKey="resolved" name="Resolved" fill="#0D7C5F" radius={[2, 2, 0, 0]} barSize={chartRange === "7d" ? 24 : chartRange === "30d" ? 10 : 4} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[220px] text-center">
+              <p className="text-sm text-text-muted">No ticket activity data available for this period.</p>
+            </div>
+          )}
         </div>
 
         {/* Projects by Status - 1 col */}

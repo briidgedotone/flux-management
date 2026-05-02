@@ -26,6 +26,13 @@ export function useTicketStats(filters: Record<string, string | undefined> = {})
   });
 }
 
+export function useTicketChartData(range = "7d") {
+  return useQuery({
+    queryKey: ["tickets", "chart-data", range],
+    queryFn: () => api.get<{ date: string; created: number; resolved: number }[]>("/api/tickets/chart-data", { range }),
+  });
+}
+
 export function useAddNote() {
   const qc = useQueryClient();
   return useMutation({
