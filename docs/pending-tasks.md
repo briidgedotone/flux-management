@@ -24,7 +24,16 @@
 - **Status:** Still pending from original client portal implementation plan
 - **Effort:** 4-6 hours
 
-### Task 5: Wire marketing website contact form to management portal webhook
+### Task 5: Trigger critical ticket notification during Atera sync
+- **Codebase:** `Flux-client`
+- **What:** During `syncAteraTickets()`, when a new ticket with priority "Critical" is synced (INSERT, not UPDATE), create a notification + send email to management users.
+- **How:** After the upsert, check if it was an INSERT (new ticket). If priority is Critical, call management portal's notification endpoint or directly insert into `management_notifications` table (shared DB).
+- **Notify:** All users with role `co-ceo` or `director` and `is_active = true`
+- **Notification:** type: `ticket_escalation`, title: "Critical: {subject}", link: `/tickets`
+- **Email:** Use existing `ticketEscalationEmail` template via Graph API Mail.Send
+- **Effort:** 2-3 hours
+
+### Task 6: Wire marketing website contact form to management portal webhook
 - **Codebase:** `flux-app` (marketing website)
 - **What:** The contact form currently sends to Google Sheets (or email). Need to also POST to management portal's webhook endpoint: `POST /api/contact-submissions/webhook` with `X-API-Secret` header.
 - **Webhook URL:** `https://<management-portal-url>/api/contact-submissions/webhook`
