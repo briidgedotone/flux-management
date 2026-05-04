@@ -129,7 +129,7 @@ export default function AIAssistantPage() {
                         {msg.content}
                       </div>
                     ) : (
-                      <div className="px-4 py-3 text-sm leading-relaxed bg-white border border-ice rounded-3xl rounded-tl-sm ai-prose">
+                      <div className="text-sm leading-relaxed ai-prose">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
