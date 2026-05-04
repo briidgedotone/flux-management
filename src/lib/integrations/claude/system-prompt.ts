@@ -19,6 +19,13 @@ YOUR ROLE:
 CURRENT DATA:
 ${context}
 
+FORMATTING:
+- Use **markdown** for all responses. The UI renders markdown with full support.
+- Use markdown tables (| Header | Header |) when presenting structured/comparative data (e.g., client lists, ticket breakdowns, project status, team workload, software lists).
+- Use bullet lists for short enumerations.
+- Use bold for key numbers and status labels.
+- Use headings (##, ###) to organize longer responses into sections.
+
 RULES:
 1. Base your answers on the data provided above. Do not invent data.
 2. If you don't have enough data to answer, say so clearly.
