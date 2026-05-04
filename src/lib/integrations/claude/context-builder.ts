@@ -85,20 +85,34 @@ async function getTeamSummary() {
 }
 
 async function getTechStackSummary() {
-  const { rows } = await query(
-    `SELECT
-       (SELECT COUNT(*) FROM software_subscriptions s
-        JOIN organizations o ON s.organization_id = o.id WHERE o.is_active = true) AS total_software,
-       (SELECT COUNT(*) FROM infrastructure_items i
-        JOIN organizations o ON i.organization_id = o.id WHERE o.is_active = true) AS total_devices,
-       (SELECT COUNT(*) FROM infrastructure_items i
-        JOIN organizations o ON i.organization_id = o.id WHERE o.is_active = true AND i.status = 'Online') AS devices_online,
-       (SELECT COUNT(*) FROM infrastructure_items i
-        JOIN organizations o ON i.organization_id = o.id WHERE o.is_active = true AND i.status = 'Offline') AS devices_offline,
-       (SELECT COUNT(*) FROM cloud_services c
-        JOIN organizations o ON c.organization_id = o.id WHERE o.is_active = true) AS total_cloud`,
-  );
-  return rows[0];
+  const [totals, perClient] = await Promise.all([
+    query(
+      `SELECT
+         (SELECT COUNT(*) FROM software_subscriptions s
+          JOIN organizations o ON s.organization_id = o.id WHERE o.is_active = true) AS total_software,
+         (SELECT COUNT(*) FROM infrastructure_items i
+          JOIN organizations o ON i.organization_id = o.id WHERE o.is_active = true) AS total_devices,
+         (SELECT COUNT(*) FROM infrastructure_items i
+          JOIN organizations o ON i.organization_id = o.id WHERE o.is_active = true AND i.status = 'Online') AS devices_online,
+         (SELECT COUNT(*) FROM infrastructure_items i
+          JOIN organizations o ON i.organization_id = o.id WHERE o.is_active = true AND i.status = 'Offline') AS devices_offline,
+         (SELECT COUNT(*) FROM cloud_services c
+          JOIN organizations o ON c.organization_id = o.id WHERE o.is_active = true) AS total_cloud`,
+    ),
+    query(
+      `SELECT o.name AS client_name,
+         COALESCE(json_agg(DISTINCT jsonb_build_object('name', s.name, 'licenses', s.license_count))
+           FILTER (WHERE s.id IS NOT NULL), '[]') AS software,
+         COALESCE(json_agg(DISTINCT jsonb_build_object('name', c.name, 'provider', c.provider))
+           FILTER (WHERE c.id IS NOT NULL), '[]') AS cloud
+       FROM organizations o
+       LEFT JOIN software_subscriptions s ON s.organization_id = o.id
+       LEFT JOIN cloud_services c ON c.organization_id = o.id
+       WHERE o.is_active = true AND o.slug != 'flux'
+       GROUP BY o.name ORDER BY o.name`,
+    ),
+  ]);
+  return { ...totals.rows[0], perClient: perClient.rows };
 }
 
 interface ContextData {
@@ -144,12 +158,23 @@ function formatContext(data: ContextData): string {
 
   // Tech stack
   const ts = data.techStack;
-  sections.push([
-    `TECH STACK:`,
+  const tsLines = [
+    `TECH STACK OVERVIEW:`,
     `  Software subscriptions: ${ts.total_software}`,
     `  Infrastructure devices: ${ts.total_devices} (${ts.devices_online} online, ${ts.devices_offline} offline)`,
     `  Cloud services: ${ts.total_cloud}`,
-  ].join("\n"));
+  ];
+  // Per-client breakdown
+  if (ts.perClient) {
+    for (const client of ts.perClient as Array<{ client_name: string; software: Array<{ name: string; licenses: number }>; cloud: Array<{ name: string; provider: string }> }>) {
+      const sw = client.software.map((s) => `${s.name} (${s.licenses})`).join(", ");
+      const cl = client.cloud.map((c) => c.name).join(", ");
+      tsLines.push(`  ${client.client_name}:`);
+      if (sw) tsLines.push(`    Software: ${sw}`);
+      if (cl) tsLines.push(`    Cloud: ${cl}`);
+    }
+  }
+  sections.push(tsLines.join("\n"));
 
   // Team
   if (data.team.length > 0) {
