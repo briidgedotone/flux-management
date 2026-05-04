@@ -8,11 +8,11 @@ import type { AIMessage } from "@/data/types";
 
 const suggestedQueries = [
   "Show all critical tickets across clients",
-  "Which clients have at-risk health scores?",
-  "What's the team utilization this month?",
-  "Summarize revenue trends by client",
-  "List projects that are behind schedule",
-  "Show SLA compliance across all clients",
+  "What software does Armada Analytics use?",
+  "Which projects are behind schedule?",
+  "How many tickets were resolved this week?",
+  "Give me a summary of our team workload",
+  "What's the tech stack overview for all clients?",
 ];
 
 export default function AIAssistantPage() {
@@ -54,7 +54,7 @@ export default function AIAssistantPage() {
           const aiMessage: AIMessage = {
             id: (Date.now() + 1).toString(),
             role: "assistant",
-            content: data?.reply ?? data?.content ?? "I received your message.",
+            content: data?.message?.content ?? data?.reply ?? data?.content ?? "I received your message.",
             timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
           };
           setMessages((prev) => [...prev, aiMessage]);
