@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { RobotIcon, PaperPlaneRightIcon, PaperclipIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useConversations, useSendMessage } from "@/hooks/use-ai";
 import type { AIMessage } from "@/data/types";
 
@@ -121,10 +123,39 @@ export default function AIAssistantPage() {
                       <RobotIcon size={16} weight="light" className="text-blue" />
                     </div>
                   )}
-                  <div className={`max-w-[${msg.role === "user" ? "70" : "85"}%]`}>
-                    <div className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                      msg.role === "user" ? "bg-blue text-white rounded-3xl rounded-br-sm" : "bg-white border border-ice rounded-3xl rounded-tl-sm"
-                    }`}>{msg.content}</div>
+                  <div className={msg.role === "user" ? "max-w-[70%]" : "max-w-[85%]"}>
+                    {msg.role === "user" ? (
+                      <div className="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap bg-blue text-white rounded-3xl rounded-br-sm">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <div className="px-4 py-3 text-sm leading-relaxed bg-white border border-ice rounded-3xl rounded-tl-sm ai-prose">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({ children }) => (
+                              <div className="my-3 rounded-lg overflow-hidden border border-ice/70">
+                                <table className="w-full border-collapse text-[13px]">{children}</table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead className="bg-ice">{children}</thead>
+                            ),
+                            th: ({ children }) => (
+                              <th className="px-4 py-2.5 text-left font-semibold text-[11px] uppercase tracking-[0.06em] text-text-secondary">{children}</th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="px-4 py-2.5 text-text-primary border-t border-ice/60">{children}</td>
+                            ),
+                            tr: ({ children, ...props }) => (
+                              <tr className="even:bg-ice/30" {...props}>{children}</tr>
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                     <p className={`text-[11px] text-text-muted mt-1 ${msg.role === "user" ? "text-right" : ""}`}>{msg.timestamp}</p>
                   </div>
                 </motion.div>
