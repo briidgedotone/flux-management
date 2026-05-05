@@ -139,8 +139,7 @@ function LeadSlideOver({ lead, onClose }: { lead: any; onClose: () => void }) {
     <AnimatePresence>
       {lead && (
         <>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-navy/40 z-[60]" onClick={onClose} />
+          <div className="fixed inset-0 z-[60]" onClick={onClose} />
           <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ duration: 0.25, ease: "easeOut" }}
             className="fixed top-0 right-0 h-screen w-full sm:w-[480px] bg-white shadow-level-4 z-[61] flex flex-col">
             {/* Header */}

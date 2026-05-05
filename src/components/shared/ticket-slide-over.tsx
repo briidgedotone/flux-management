@@ -86,7 +86,7 @@ export function TicketSlideOver({ ticket, onClose }: TicketSlideOverProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-navy/50 z-[60]"
+            className="fixed inset-0 z-[60]"
             onClick={onClose}
           />
 
