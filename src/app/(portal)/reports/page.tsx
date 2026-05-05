@@ -17,66 +17,7 @@ type TimeRange = "7d" | "30d" | "90d";
 const rangeLabels: Record<TimeRange, string> = { "7d": "7 Days", "30d": "30 Days", "90d": "90 Days" };
 
 function printReport() {
-  // Find the report content container
-  const reportEl = document.getElementById("report-content");
-  if (!reportEl) return;
-
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) return;
-
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Flux Technologies — Report</title>
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0A1929; padding: 40px; max-width: 900px; margin: 0 auto; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 2px solid #DDE0E6; }
-        .logo { font-weight: 800; font-size: 18px; letter-spacing: 0.15em; color: #002B4D; }
-        .logo-sub { font-size: 9px; letter-spacing: 0.2em; color: #8896A6; }
-        .generated { font-size: 11px; color: #8896A6; }
-        table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-        th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #8896A6; padding: 8px 12px; border-bottom: 1px solid #DDE0E6; }
-        td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #F0F2F5; }
-        h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-        h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; }
-        .subtitle { font-size: 13px; color: #8896A6; }
-        .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 20px 0; }
-        .metric { border: 1px solid #DDE0E6; border-radius: 10px; padding: 14px; }
-        .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #8896A6; }
-        .metric-value { font-size: 22px; font-weight: 700; color: #0A1929; margin-top: 2px; }
-        .insight-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
-        .insight { background: #F7F8FA; border-radius: 10px; padding: 14px; }
-        .insight-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #8896A6; }
-        .insight-value { font-size: 17px; font-weight: 700; color: #0A1929; margin-top: 2px; }
-        .alert { background: #FFF5F5; border: 1px solid #FED7D7; border-radius: 10px; padding: 12px 16px; color: #C53030; font-size: 13px; margin: 12px 0; }
-        .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; }
-        .on-track { background: #0D7C5F; }
-        .at-risk { background: #B8860B; }
-        .delayed { background: #C53030; }
-        .progress-bar { width: 100%; height: 6px; background: #F0F2F5; border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #15549D; border-radius: 3px; }
-        .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #DDE0E6; font-size: 11px; color: #8896A6; text-align: center; }
-        @media print { body { padding: 20px; } }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div>
-          <div class="logo">FLUX</div>
-          <div class="logo-sub">TECHNOLOGIES</div>
-        </div>
-        <div class="generated">Generated ${new Date().toLocaleString()}</div>
-      </div>
-      ${reportEl.innerHTML}
-      <div class="footer">Flux Technologies Management Portal · Confidential</div>
-    </body>
-    </html>
-  `);
-
-  printWindow.document.close();
-  setTimeout(() => { printWindow.print(); }, 300);
+  window.print();
 }
 
 export default function ReportsPage() {
@@ -106,7 +47,7 @@ export default function ReportsPage() {
         </div>
       ) : (
         <div className="space-y-5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between print-hide">
             <button onClick={() => setReportType(null)} className="flex items-center gap-1 text-sm text-text-secondary hover:text-blue transition-colors">
               <CaretLeftIcon size={14} weight="light" /> Back to Reports
             </button>
@@ -124,6 +65,15 @@ export default function ReportsPage() {
                 <PrinterIcon size={13} weight="light" /> Print
               </button>
             </div>
+          </div>
+
+          {/* Print-only header */}
+          <div id="print-header" className="items-center justify-between mb-8 pb-4 border-b-2 border-ice">
+            <div>
+              <div className="font-bold text-[18px] tracking-[0.15em] text-navy">FLUX</div>
+              <div className="text-[9px] tracking-[0.2em] text-text-muted">TECHNOLOGIES</div>
+            </div>
+            <div className="text-[11px] text-text-muted">Generated {new Date().toLocaleString()}</div>
           </div>
 
           <div id="report-content">

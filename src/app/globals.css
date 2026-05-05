@@ -348,3 +348,44 @@
     transform: none;
   }
 }
+
+/* ── Print styles for reports ── */
+@media print {
+  /* Hide everything */
+  body > * { display: none !important; }
+  
+  /* Show only the Next.js root */
+  body > #__next,
+  body > [data-nextjs-scroll-focus-boundary] { display: block !important; }
+  
+  /* Hide sidebar, top bar, mobile nav, overlays */
+  aside, header, nav,
+  [class*="sidebar"], [class*="top-bar"], [class*="mobile-bottom"],
+  [class*="CommandPalette"], [class*="NotificationDropdown"],
+  [class*="UserDropdown"], [class*="ToastContainer"] { display: none !important; }
+  
+  /* Remove sidebar margin */
+  [class*="lg:ml-"] { margin-left: 0 !important; }
+  
+  /* Hide non-report UI */
+  .print-hide { display: none !important; }
+  
+  /* Make report full width */
+  main { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+  
+  /* Print header for branding */
+  #print-header { display: flex !important; }
+  
+  /* Report card — remove shadow/border for clean print */
+  #report-content > div {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Ensure backgrounds print */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
+
+/* Hide print header on screen */
+#print-header { display: none; }
