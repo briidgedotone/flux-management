@@ -8,6 +8,7 @@ import { successResponse, Errors } from "@/lib/api/response";
 import { projectIdSchema, createTaskSchema } from "@/lib/validators/projects";
 import { getProject, createTask } from "@/lib/db/queries/projects";
 import { logActivity } from "@/lib/db/queries/activity-log";
+import { backgroundSendEmail, taskAssignmentEmail } from "@/lib/integrations/mail/sender";
 
 export async function POST(
   request: NextRequest,
@@ -40,6 +41,20 @@ export async function POST(
         project.organizationId,
         `Created task "${body.data.name}" in project ${project.name}`,
       );
+
+      // Email notification to assigned user (non-blocking)
+      if (body.data.assignedToEmail && body.data.assignedToName) {
+        backgroundSendEmail({
+          to: body.data.assignedToEmail,
+          subject: `Task Assigned — ${body.data.name}`,
+          htmlBody: taskAssignmentEmail(
+            body.data.assignedToName,
+            body.data.name,
+            project.name,
+            ctx.user.name,
+          ),
+        });
+      }
 
       return successResponse(task, 201);
     } catch (err) {
