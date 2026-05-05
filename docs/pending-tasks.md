@@ -40,3 +40,30 @@
 - **Blocked on:** Brandon granting `Organization.Read.All` permission to the `flux-clientportal-dev` app registration in Azure AD
 - **Also consider:** `User.Read.All` permission to resolve group member names (currently null due to insufficient privileges)
 - **Effort:** 2-3 hours once permission is granted
+
+### Task 8: Task create/edit/delete UI + Planner write-back (TBD)
+- **Codebase:** `flux-management` (UI) + `flux-management` (API wiring)
+- **PRD requirement:** U3, T2, T4, N3 — "Employees: create, delete, or complete tasks only"
+- **Current state:**
+  - API endpoints exist: `POST/PUT/DELETE /api/projects/{id}/tasks/{taskId}`
+  - Planner write-back functions exist: `createPlannerTask`, `updatePlannerTask`, `deletePlannerTask` in `src/lib/integrations/graph/planner-write.ts`
+  - Task assignment email notification wired on task creation
+  - Plan IDs already stored in `organizations.planner_group_id` (Armada: 10 plans, OnPoint: 2 plans)
+  - Project detail page shows tasks in Kanban board (read-only)
+- **What's missing:**
+  - "Add Task" form on project detail page (name, assignee, priority, due date)
+  - Click-to-edit on task cards (change status, update details)
+  - Delete button on task cards
+  - Wire `createPlannerTask` / `updatePlannerTask` / `deletePlannerTask` calls in API routes (currently `// TODO`)
+- **Blocker:** Azure AD app (`flux-clientportal-dev`) only has `Tasks.Read.All` permission. **Brandon must grant `Tasks.ReadWrite.All`** for Planner write-back to work.
+- **Without write-back risk:** Tasks created/edited in portal would get overwritten by next Planner sync (every 5 min) since sync does `ON CONFLICT ... DO UPDATE`
+- **Architecture context:**
+  - Client portal syncs from Planner Premium via Dataverse (read-only, `dataverseGet` only)
+  - Management portal has its own Graph token via `planner-write.ts` (separate from client portal's auth)
+  - Dual-write pattern: DB write immediate + Planner write background/non-blocking
+  - Projects come from Dataverse sync, not Graph Planner Basic — write-back needs to go to the same Dataverse/Planner Premium endpoint or Graph Planner
+- **Effort:** 4-6 hours for UI + API wiring once permission is granted
+- **Ask Brandon:**
+  1. Grant `Tasks.ReadWrite.All` on the `flux-management-dev` app registration
+  2. Confirm if write-back should target Planner Premium (Dataverse) or Planner Basic (Graph API)
+  3. Confirm which Plan ID to use per project when creating new tasks
