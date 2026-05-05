@@ -39,7 +39,9 @@ export function TopBar({ onSearchClick, onNotificationClick, onUserClick }: TopB
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbs = segments.map((seg, i) => {
     const path = "/" + segments.slice(0, i + 1).join("/");
-    const label = routeLabels[path] || seg.replace(/[-[\]]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    // Hide UUID segments in breadcrumb (dynamic route IDs)
+    const isUuid = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(seg) || /^[a-f0-9]{8,}$/i.test(seg);
+    const label = routeLabels[path] || (isUuid ? "" : seg.replace(/[-[\]]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()));
     return { label, path, isLast: i === segments.length - 1 };
   });
 
@@ -55,7 +57,7 @@ export function TopBar({ onSearchClick, onNotificationClick, onUserClick }: TopB
         </button>
 
         <nav className="hidden sm:flex items-center gap-1 min-w-0">
-          {breadcrumbs.map((crumb, i) => (
+          {breadcrumbs.filter((c) => c.label).map((crumb, i) => (
             <div key={crumb.path} className="flex items-center gap-1">
               {i > 0 && <CaretRightIcon size={14} weight="light" className="text-text-muted" />}
               <span
