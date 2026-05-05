@@ -26,17 +26,6 @@ export default function ContactSubmissionsPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-10 flex items-center justify-center">
-          <EnvelopeOpenIcon size={22} weight="light" className="text-blue" />
-        </div>
-        <div>
-          <h1 className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-9 tracking-[-0.02em] text-text-primary">Leads</h1>
-          <p className="text-sm text-text-secondary mt-0.5">Contact form submissions from the website</p>
-        </div>
-      </div>
-
       {/* Filter tabs */}
       <div className="border-b border-ice">
         <div className="flex gap-6">

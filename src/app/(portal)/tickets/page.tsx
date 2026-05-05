@@ -40,17 +40,6 @@ export default function TicketsPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-10 flex items-center justify-center">
-          <TicketIcon size={22} weight="light" className="text-blue" />
-        </div>
-        <div>
-          <h1 className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-9 tracking-[-0.02em] text-text-primary">Tickets</h1>
-          <p className="text-sm text-text-secondary mt-0.5">{isFiltered ? `Showing ${clientName}` : `${total} tickets across all clients`}</p>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px] max-w-md">

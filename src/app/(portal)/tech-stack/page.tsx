@@ -35,17 +35,6 @@ export default function TechStackPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-blue-10 flex items-center justify-center">
-          <StackIcon size={22} weight="light" className="text-blue" />
-        </div>
-        <div>
-          <h1 className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-9 tracking-[-0.02em] text-text-primary">Tech Stack</h1>
-          <p className="text-sm text-text-secondary mt-0.5">{isFiltered ? `Tech stack for ${clientName}` : "Software, infrastructure, and cloud services"}</p>
-        </div>
-      </div>
-
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard icon={<StackIcon size={20} weight="light" />} value={String(stats?.software.total ?? 0)} label="Software" iconBgClass="bg-blue-10" iconColorClass="text-blue" index={0} />
