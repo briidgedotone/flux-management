@@ -30,11 +30,8 @@ function LoginContent() {
     window.location.href = "/api/auth/login";
   };
 
-  const handleDevLogin = (email?: string) => {
-    const url = email
-      ? `/api/auth/dev-login?email=${encodeURIComponent(email)}`
-      : "/api/auth/dev-login";
-    window.location.href = url;
+  const handleDevLogin = (role: string) => {
+    window.location.href = `/api/auth/dev-login?role=${role}`;
   };
 
   return (
@@ -106,11 +103,17 @@ function LoginContent() {
             <div className="mt-8 pt-6 border-t border-ice">
               <p className="text-xs text-text-muted mb-3 font-medium uppercase tracking-wider">Quick Login</p>
               <div className="space-y-2">
-                <button
-                  onClick={() => handleDevLogin("development@flux.tech")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
-                >
-                  Dev Account
+                <button onClick={() => handleDevLogin("co-ceo")}
+                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
+                  Co-CEO
+                </button>
+                <button onClick={() => handleDevLogin("director")}
+                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
+                  Director
+                </button>
+                <button onClick={() => handleDevLogin("employee")}
+                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
+                  Employee
                 </button>
               </div>
             </div>

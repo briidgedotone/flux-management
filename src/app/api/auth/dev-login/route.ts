@@ -1,12 +1,6 @@
 // GET /api/auth/dev-login — testing login bypass
-// Creates a real session using a seed user, skipping Azure AD.
-// Accepts optional ?email= param to log in as a specific user.
+// Accepts ?role=co-ceo|director|employee to log in as any user with that role.
 // BLOCKED unless ENABLE_TEST_LOGIN=true is set.
-//
-// Test URLs:
-//   /api/auth/dev-login                              → Brandon Devier (default)
-//   /api/auth/dev-login?email=zack@fluxtech.com      → Zack Devier
-//   /api/auth/dev-login?email=cameron@fluxtech.com   → Cameron (employee)
 
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db/client";
@@ -23,10 +17,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const email = request.nextUrl.searchParams.get("email") ?? "brandon@fluxtech.com";
+  const role = request.nextUrl.searchParams.get("role") ?? "co-ceo";
 
-  // R17: No SELECT * — specify columns
-  // R25: Reject client role users from management portal
+  // Find any active management user with this role
   const { rows } = await query<{
     id: string;
     email: string;
@@ -34,18 +27,18 @@ export async function GET(request: NextRequest) {
     role: string;
   }>(
     `SELECT id, email, name, role
-     FROM users WHERE email = $1 AND is_active = true AND role != 'client' LIMIT 1`,
-    [email],
+     FROM users WHERE role = $1 AND is_active = true AND role != 'client'
+     ORDER BY name LIMIT 1`,
+    [role],
   );
 
   if (!rows[0]) {
     return NextResponse.json(
-      { error: { code: "NO_USERS", message: `Management user ${email} not found` } },
+      { error: { code: "NO_USERS", message: `No user with role "${role}" found` } },
       { status: 404 },
     );
   }
 
-  // No organizationId for management users [R27]
   const user: AuthUser = {
     id: rows[0].id,
     email: rows[0].email,
