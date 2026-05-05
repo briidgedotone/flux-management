@@ -9,7 +9,7 @@ import { projectIdSchema, createTaskSchema } from "@/lib/validators/projects";
 import { getProject, createTask } from "@/lib/db/queries/projects";
 import { logActivity } from "@/lib/db/queries/activity-log";
 import { backgroundSendEmail, taskAssignmentEmail } from "@/lib/integrations/mail/sender";
-import { createPlannerTask, backgroundPlannerWrite } from "@/lib/integrations/graph/planner-write";
+import { createDataverseTask, backgroundDataverseWrite } from "@/lib/integrations/dataverse/task-write";
 
 export async function POST(
   request: NextRequest,
@@ -31,17 +31,17 @@ export async function POST(
       // DB write (immediate)
       const task = await createTask(parsedId.data.id, project.organizationId, body.data);
 
-      // Planner write-back (background, non-blocking) [R33]
-      // Only attempt if project has a real Planner plan ID (not mock/dataverse IDs)
+      // Dataverse/Planner Premium write-back (background, non-blocking) [R33]
+      // Only attempt if project has a real Dataverse project ID (not mock/test IDs)
       const planId = project.plannerPlanId;
       if (planId && !planId.startsWith("mock-") && !planId.startsWith("test-")) {
-        const priorityMap: Record<string, number> = { Critical: 1, High: 3, Medium: 5, Low: 9 };
-        backgroundPlannerWrite("create", () =>
-          createPlannerTask(planId, {
+        backgroundDataverseWrite("create", () =>
+          createDataverseTask({
             name: body.data.name,
+            projectId: planId,
+            priority: body.data.priority as "Critical" | "High" | "Medium" | "Low" | undefined,
             dueDate: body.data.dueDate ?? undefined,
-            priority: priorityMap[body.data.priority ?? "Medium"],
-            assigneeEmail: body.data.assignedToEmail ?? undefined,
+            status: "To Do",
           }),
         );
       }

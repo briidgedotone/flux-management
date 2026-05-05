@@ -9,7 +9,7 @@ import { successResponse, Errors } from "@/lib/api/response";
 import { updateTaskSchema, taskIdSchema } from "@/lib/validators/projects";
 import { getTaskById, updateTask, deleteTask } from "@/lib/db/queries/projects";
 import { logActivity } from "@/lib/db/queries/activity-log";
-import { updatePlannerTask, deletePlannerTask, backgroundPlannerWrite } from "@/lib/integrations/graph/planner-write";
+import { updateDataverseTask, deleteDataverseTask, backgroundDataverseWrite } from "@/lib/integrations/dataverse/task-write";
 
 export async function PUT(
   request: NextRequest,
@@ -35,15 +35,15 @@ export async function PUT(
 
       const updated = await updateTask(parsedId.data.taskId, body.data);
 
-      // Planner write-back (background, non-blocking) [R33]
+      // Dataverse/Planner Premium write-back (background, non-blocking) [R33]
       const plannerTaskId = existing.planner_task_id;
       if (plannerTaskId && !plannerTaskId.startsWith("mock-")) {
-        const priorityMap: Record<string, number> = { Critical: 1, High: 3, Medium: 5, Low: 9 };
-        backgroundPlannerWrite("update", () =>
-          updatePlannerTask(plannerTaskId, {
+        backgroundDataverseWrite("update", () =>
+          updateDataverseTask(plannerTaskId, {
             name: body.data.name,
+            priority: body.data.priority as "Critical" | "High" | "Medium" | "Low" | undefined,
             dueDate: body.data.dueDate ?? undefined,
-            priority: body.data.priority ? priorityMap[body.data.priority] : undefined,
+            status: body.data.status as "To Do" | "In Progress" | "Review" | "Complete" | undefined,
           }),
         );
       }
@@ -88,10 +88,10 @@ export async function DELETE(
 
       await deleteTask(parsedId.data.taskId);
 
-      // Planner delete (background, non-blocking) [R33]
+      // Dataverse/Planner Premium delete (background, non-blocking) [R33]
       const plannerTaskId = existing.planner_task_id;
       if (plannerTaskId && !plannerTaskId.startsWith("mock-")) {
-        backgroundPlannerWrite("delete", () => deletePlannerTask(plannerTaskId));
+        backgroundDataverseWrite("delete", () => deleteDataverseTask(plannerTaskId));
       }
 
       // R29: Audit log
