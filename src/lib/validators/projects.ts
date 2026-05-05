@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const projectListSchema = z.object({
   status: z.enum(["On Track", "At Risk", "Delayed"]).optional(),
-  clientId: z.string().uuid().optional(),
+  clientId: z.string().min(1).optional(),
   search: z.string().max(200).trim().optional(),
   page: z.coerce.number().int().min(1).max(1000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -15,7 +15,7 @@ export const projectIdSchema = z.object({
 });
 
 export const projectStatsSchema = z.object({
-  clientId: z.string().uuid().optional(),
+  clientId: z.string().min(1).optional(),
 });
 
 export const createTaskSchema = z.object({
