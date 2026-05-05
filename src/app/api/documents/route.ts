@@ -4,7 +4,7 @@
 import { NextRequest } from "next/server";
 import { withManagementAuth } from "@/lib/auth/middleware";
 import { successResponse, Errors } from "@/lib/api/response";
-import { listDocuments, getDocumentStats } from "@/lib/db/queries/documents";
+import { listDocuments, getDocumentStats, getFolderPaths } from "@/lib/db/queries/documents";
 
 export async function GET(request: NextRequest) {
   return withManagementAuth(request, async () => {
@@ -14,12 +14,13 @@ export async function GET(request: NextRequest) {
       const search = params.get("search") ?? undefined;
       const fileType = params.get("fileType") ?? undefined;
 
-      const [documents, stats] = await Promise.all([
+      const [documents, stats, folderPaths] = await Promise.all([
         listDocuments({ clientId, search, fileType }),
         getDocumentStats(),
+        getFolderPaths(clientId),
       ]);
 
-      return successResponse({ documents, stats });
+      return successResponse({ documents, stats, folderPaths });
     } catch (err) {
       console.error("[documents] failed:", (err as Error).message);
       return Errors.INTERNAL();

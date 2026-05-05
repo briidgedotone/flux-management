@@ -47,6 +47,29 @@ export async function listDocuments(filters: { clientId?: string; search?: strin
   }));
 }
 
+/** Get all unique folder paths for building a folder tree. */
+export async function getFolderPaths(clientId?: string) {
+  const conditions: string[] = ["o.is_active = true"];
+  const params: unknown[] = [];
+  let idx = 1;
+
+  if (clientId) {
+    conditions.push(`d.organization_id = $${idx++}`);
+    params.push(clientId);
+  }
+
+  const result = await query(
+    `SELECT DISTINCT d.folder_path
+     FROM documents d
+     JOIN organizations o ON d.organization_id = o.id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY d.folder_path`,
+    params,
+  );
+
+  return result.rows.map((r) => r.folder_path as string);
+}
+
 export async function getDocumentStats() {
   const result = await query(
     `SELECT COUNT(*) AS total,
