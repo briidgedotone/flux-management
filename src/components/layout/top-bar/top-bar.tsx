@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useAuth } from "@/hooks/use-auth";
-import { useNotificationStore } from "@/stores/notification-store";
+import { useUnreadCount } from "@/hooks/use-notifications";
 import {
   MagnifyingGlassIcon,
   BellIcon,
@@ -31,7 +31,8 @@ interface TopBarProps {
 export function TopBar({ onSearchClick, onNotificationClick, onUserClick }: TopBarProps) {
   const pathname = usePathname();
   const { setMobileOpen } = useSidebarStore();
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = (unreadData as any)?.count ?? 0;
   const { data: auth } = useAuth();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userInitials = ((auth as any)?.name ?? "").split(" ").map((n: string) => n[0]).join("").toUpperCase() || "?";
@@ -103,7 +104,7 @@ export function TopBar({ onSearchClick, onNotificationClick, onUserClick }: TopB
           className="relative flex items-center justify-center w-9 h-9 rounded-full hover:bg-ice-30 transition-colors duration-150"
         >
           <BellIcon size={20} weight="light" className="text-text-secondary" />
-          {unreadCount() > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-error ring-2 ring-white" />
           )}
         </button>
