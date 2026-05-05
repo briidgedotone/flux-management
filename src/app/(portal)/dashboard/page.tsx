@@ -416,30 +416,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-30">
-        <div className="flex items-center gap-2 bg-navy/95 backdrop-blur-xl px-5 py-3 rounded-full shadow-level-4">
-          <button
-            onClick={() => router.push("/tickets")}
-            className="flex items-center gap-2 bg-blue hover:bg-blue-light text-white text-xs font-medium px-4 py-2 rounded-full transition-colors duration-150"
-          >
-            <PlusIcon size={14} weight="light" />
-            New Ticket
-          </button>
-          <button className="flex items-center gap-2 text-text-on-dark-muted hover:text-white text-xs font-medium px-3 py-2 rounded-full transition-colors duration-150">
-            <ExportIcon size={14} weight="light" />
-            Export
-          </button>
-          <button
-            onClick={() => router.push("/ai-assistant")}
-            className="flex items-center gap-2 text-text-on-dark-muted hover:text-white text-xs font-medium px-3 py-2 rounded-full transition-colors duration-150"
-          >
-            <RobotIcon size={14} weight="light" />
-            AI Assistant
-          </button>
-        </div>
-      </div>
-
       <TicketSlideOver ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />
     </div>
   );
