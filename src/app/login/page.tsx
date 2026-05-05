@@ -23,8 +23,8 @@ export default function LoginPage() {
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const testLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN;
-  const isDev = testLoginEnabled === "true" || process.env.NODE_ENV === "development";
+  // Dev login buttons always render — the API route guards with ENABLE_TEST_LOGIN server-side
+  const isDev = true;
 
   const handleSSO = () => {
     window.location.href = "/api/auth/login";
