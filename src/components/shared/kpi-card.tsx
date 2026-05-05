@@ -58,7 +58,7 @@ export function KpiCard({
 
       {/* Value + Label */}
       <div className="flex flex-col min-w-0">
-        <span className="font-[family-name:var(--font-aptos)] font-bold text-[32px] leading-tight tracking-[-0.02em] text-navy">
+        <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-text-primary">
           {value}
         </span>
         <span className="font-medium text-[11px] uppercase tracking-[0.08em] text-text-muted">
