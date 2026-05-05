@@ -9,6 +9,7 @@ interface DashboardData {
   tickets: { total: number; open: number; pending: number; closed: number; critical: number; avgResolutionHours: number; createdLast30d: number; resolvedLast30d: number };
   projects: { total: number; onTrack: number; atRisk: number; delayed: number; avgProgress: number };
   team: { totalMembers: number };
+  lastSyncedAt: string | null;
 }
 
 export function useDashboard() {

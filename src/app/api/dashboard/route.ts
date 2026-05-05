@@ -8,15 +8,17 @@ import { listClients } from "@/lib/db/queries/clients";
 import { getTicketStats } from "@/lib/db/queries/tickets";
 import { getProjectStats } from "@/lib/db/queries/projects";
 import { listTeamMembers } from "@/lib/db/queries/team";
+import { query } from "@/lib/db/client";
 
 export async function GET(request: NextRequest) {
   return withManagementAuth(request, async () => {
     try {
-      const [clients, tickets, projects, team] = await Promise.all([
+      const [clients, tickets, projects, team, lastSync] = await Promise.all([
         listClients({ limit: 100 }),
         getTicketStats({ range: "30d" }),
         getProjectStats(),
         listTeamMembers(),
+        query(`SELECT MAX(last_synced) AS last_synced FROM connector_statuses WHERE status = 'connected'`),
       ]);
 
       return successResponse({
@@ -43,6 +45,7 @@ export async function GET(request: NextRequest) {
         team: {
           totalMembers: team.length,
         },
+        lastSyncedAt: lastSync.rows[0]?.last_synced?.toISOString() ?? null,
       });
     } catch (err) {
       console.error("[dashboard] failed:", (err as Error).message);

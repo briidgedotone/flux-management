@@ -37,6 +37,17 @@ const statusDotColor: Record<string, string> = {
   Delayed: "bg-error",
 };
 
+function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 const todayFormatted = new Date().toLocaleDateString("en-US", {
   weekday: "long", year: "numeric", month: "long", day: "numeric",
 });
@@ -99,7 +110,7 @@ export default function DashboardPage() {
               weight="light"
               className={syncing ? "animate-spin" : ""}
             />
-            Last synced: 2 min ago
+            {d?.lastSyncedAt ? `Last synced: ${formatTimeAgo(d.lastSyncedAt)}` : "Syncing..."}
           </button>
         </div>
       </div>
