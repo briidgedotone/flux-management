@@ -23,7 +23,8 @@ export default function LoginPage() {
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const isDev = process.env.NODE_ENV === "development" || process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN === "true";
+  const testLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN;
+  const isDev = testLoginEnabled === "true" || process.env.NODE_ENV === "development";
 
   const handleSSO = () => {
     window.location.href = "/api/auth/login";
