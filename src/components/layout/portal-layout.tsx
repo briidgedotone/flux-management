@@ -52,7 +52,7 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
           isExpanded ? "lg:ml-[260px]" : "lg:ml-[72px]"
         }`}
       >
-        <div className="sticky top-0 z-30 relative">
+        <div className="fixed top-0 right-0 left-0 z-30" style={{ marginLeft: "inherit" }}>
           <TopBar
             onSearchClick={() => setSearchOpen(true)}
             onNotificationClick={handleNotifClick}
@@ -72,7 +72,7 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <main className="px-4 md:px-6 lg:px-10 py-8 max-w-[1200px] mx-auto pb-24 md:pb-8 animate-page-in">
+        <main className="px-4 md:px-6 lg:px-10 pt-[76px] pb-24 md:pb-8 max-w-[1200px] mx-auto animate-page-in">
           {children}
         </main>
       </div>
