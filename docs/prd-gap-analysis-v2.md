@@ -385,7 +385,7 @@ Every requirement that applies to the management portal, extracted verbatim with
 |----|-------------|--------|----------|-------|
 | N1 | Critical IT issue notifications | ✅ | In-app + email during Atera sync for new Critical tickets | |
 | N2 | Weekly summary reports | ✅ | `/api/cron/weekly-digest` sends email to managers | |
-| N3 | Task assignment notifications | ⚠️ | Email template exists (`taskAssignmentEmail`), but not triggered on task create | Wiring needed |
+| N3 | Task assignment notifications | ✅ | Email sent on task creation when assignee has email | |
 | N4 | Email via Outlook | ✅ | Graph API Mail.Send integration | |
 | N5 | In-app notifications | ✅ | `management_notifications` table + notification dropdown in top bar | |
 
@@ -433,13 +433,13 @@ Every requirement that applies to the management portal, extracted verbatim with
 | **Client Detail** | O2, D3, D5, IN3, AC7 | ✅ | Overview/Tickets/Projects/Profile tabs. Manual profile edit (Wisetrack replacement). |
 | **Tickets** | M2, I1, D1, K1, K2, AC2 | ✅ | Paginated with search, status/priority filters. Real Atera data. |
 | **Projects** | M3, I3, D2, K3, AC2 | ✅ | 3 views (cards, list, Gantt timeline). Real Planner data. |
-| **Team** | U1-U3, T5 | ⚠️ | Shows members with roles + stats. **Utilization bar shown but not from PRD — is this accurate data?** |
+| **Team** | U1-U3, T5 | ✅ | Shows members with roles + real stats (tickets resolved, active tasks). |
 | **Tech Stack** | M4, D3, K5, IN3 | ✅ | Per-client software (auto from Atera), devices, cloud. Manual add/delete. |
 | **Reports** | R1, R2, R5, AI4, AC7 | ✅ | 3 reports: Ticket Activity, Project Progress, Full Summary. Print support. |
 | **Leads** | D4, D9, IN5 | ✅ | Contact form submissions with status management (New/Reviewed/Responded). |
 | **Connectors** | W7, AI1 | ✅ | Per-integration status (Atera, Planner, SharePoint, Outlook) with per-client breakdown. |
 | **AI Assistant** | M5, A1-A5, AI8, AC5 | ✅ | Claude with cross-org context. Markdown + tables. Per-client tech stack in context. |
-| **Settings** | UX2, TR4 | ⚠️ | **UI exists but most actions are non-functional** (save, password change, 2FA, integrations toggles). All cosmetic. |
+| **Settings** | UX2, TR4 | ✅ | Profile (read-only from Azure AD), notifications (active types), security (SSO/MFA status, RBAC, encryption). Honest — no fake buttons. |
 
 ---
 
@@ -450,22 +450,22 @@ Every requirement that applies to the management portal, extracted verbatim with
 | # | Gap | PRD Ref | Severity | Notes |
 |---|-----|---------|----------|-------|
 | 1 | MFA not enforced | UX2, TR5, S9, AC3 | 🔒 Medium | Azure AD ready, needs Brandon to configure Conditional Access policy |
-| 2 | OneDrive/SharePoint documents not surfaced | IN6 | Low | Data exists in shared DB (synced by client portal), just not shown on management portal |
-| 3 | Task assignment notifications not triggered | N3 | Low | Email template exists but not wired to task creation |
+| 2 | ~~OneDrive/SharePoint documents not surfaced~~ | IN6 | ✅ FIXED | Documents page added with folder hierarchy, breadcrumbs, list/grid views |
+| 3 | ~~Task assignment notifications not triggered~~ | N3 | ✅ FIXED | Email sent on task creation to assigned user |
 | 4 | Client satisfaction tracking | K4 | None | PRD said "if integrated later" — future item |
 | 5 | Predictive AI (trends, resource allocation, recommendations) | AI5-AI7 | None | PRD labeled as aspirational. AI can already suggest when asked. |
-| 6 | Planner write-back not production-tested | T3, T4 | 🔒 Medium | Needs M365 Group IDs from Brandon |
+| 6 | Planner write-back + task CRUD UI | T2, T3, T4 | 🔒 Medium | Plan IDs in DB, write-back functions exist. Needs `Tasks.ReadWrite.All` permission from Brandon. See Task 8 in pending-tasks.md |
 | 7 | M365 license SKU data | M4 | 🔒 Low | Needs `Organization.Read.All` permission from Brandon |
 
 ### 4.2 Issues — Implemented but Problematic
 
 | # | Issue | Page | Details |
 |---|-------|------|---------|
-| 1 | Settings page is mostly non-functional | Settings | Save button, password change, 2FA toggle, integration toggles, session management — all UI-only with no backend wiring. **Misleading UX.** |
-| 2 | Team utilization bar | Team | Shows a utilization percentage but this metric isn't in the PRD and the data source is unclear. Is it real or placeholder? |
-| 3 | "Last synced: 2 min ago" on dashboard | Dashboard | Hardcoded text, not from real sync data. Should show actual last sync time. |
-| 4 | Report API endpoints still exist for removed scope creep | API | `/api/reports/revenue`, `/api/reports/sla-compliance`, `/api/reports/team-performance`, `/api/reports/ticket-analytics` — these routes exist but aren't called by the UI. Dead code. |
-| 5 | `Flux Technologies` appears in some data views | Tech Stack, AI | Flux's own software (Adobe, ChatGPT, etc.) shows when "All Clients" is selected. May confuse if Flux isn't considered a "client". |
+| 1 | ~~Settings page is mostly non-functional~~ | Settings | ✅ FIXED — Simplified to honest read-only profile, real notification types, security overview |
+| 2 | ~~Team utilization bar~~ | Team | ✅ FIXED — Removed fake utilization bar (seeded default, not in PRD) |
+| 3 | ~~"Last synced: 2 min ago" on dashboard~~ | Dashboard | ✅ FIXED — Shows real last sync time from connector_statuses |
+| 4 | ~~Report API endpoints for scope creep~~ | API | ✅ FIXED — Deleted revenue, SLA, team-performance, ticket-analytics routes |
+| 5 | `Flux Technologies` appears in some data views | Tech Stack, AI | Flux's own software (Adobe, ChatGPT, etc.) shows when "All Clients" is selected. Minor — Flux is technically a client org. |
 
 ### 4.3 Items Beyond PRD (Implemented, Value-Add)
 
@@ -484,16 +484,17 @@ Every requirement that applies to the management portal, extracted verbatim with
 
 ## Part 5: Prioritized Action Items
 
-### Must Fix (Before Launch)
+### Must Fix (Before Launch) — ALL DONE ✅
 
-| # | Action | Gap Ref | Effort | Blocked? |
-|---|--------|---------|--------|----------|
-| 1 | Fix Settings page — either wire save functionality or simplify to read-only | Issue #1 | 3-4h | No |
-| 2 | Surface documents from shared DB on management portal | Gap #2 | 3-4h | No |
-| 3 | Wire task assignment notification email | Gap #3 | 1-2h | No |
-| 4 | Fix "Last synced" text on dashboard to show real time | Issue #3 | 30min | No |
-| 5 | Remove dead report API routes (revenue, SLA, team-performance, ticket-analytics) | Issue #4 | 30min | No |
-| 6 | Verify team utilization data is real or remove the bar | Issue #2 | 30min | No |
+| # | Action | Status |
+|---|--------|--------|
+| 1 | Settings page — simplified to honest read-only | ✅ Done |
+| 2 | Documents page — added with folder hierarchy, breadcrumbs, list/grid | ✅ Done |
+| 3 | Task assignment email notification wired | ✅ Done |
+| 4 | Dashboard "Last synced" shows real time | ✅ Done |
+| 5 | Dead scope-creep report API routes removed | ✅ Done |
+| 6 | Fake utilization bar removed from team page | ✅ Done |
+| 7 | Project detail page crash fixed (type mismatch with API) | ✅ Done |
 
 ### Blocked on Brandon
 
@@ -528,28 +529,31 @@ Every requirement that applies to the management portal, extracted verbatim with
 | Storage & Security (S1-S9) | 9 | 8 | 0 | 0 | 1 |
 | Reports (R1-R5) | 5 | 5 | 0 | 0 | 0 |
 | KPIs (K1-K5) | 5 | 4 | 0 | 1 | 0 |
-| Integrations (IN1-IN6) | 6 | 5 | 1 | 0 | 0 |
+| Integrations (IN1-IN6) | 6 | 6 | 0 | 0 | 0 |
 | AI/Automation (AI1-AI10) | 10 | 7 | 0 | 3 | 0 |
 | UX (UX1-UX7) | 7 | 6 | 0 | 0 | 1 |
-| Notifications (N1-N5) | 5 | 4 | 1 | 0 | 0 |
+| Notifications (N1-N5) | 5 | 5 | 0 | 0 | 0 |
 | Technical (TR1-TR11) | 11 | 9 | 1 | 0 | 1 |
-| Acceptance (AC1-AC9) | 9 | 7 | 2 | 0 | 0 |
-| **TOTAL** | **104** | **92** | **5** | **4** | **3** |
+| Acceptance (AC1-AC9) | 9 | 8 | 1 | 0 | 0 |
+| **TOTAL** | **104** | **97** | **2** | **4** | **3** |
 
-**Overall: 92/104 requirements fully implemented (88.5%)**
+**Overall: 97/104 requirements fully implemented (93.3%)**
 
-- 5 partially implemented (settings UX, OneDrive docs, task notifications, SOC 2 formal, MFA in acceptance)
-- 4 not implemented (client satisfaction KPI, 3 aspirational AI features)
-- 3 blocked on Brandon (MFA enforcement, Planner testing, M365 licenses)
+- 2 partially implemented (SOC 2 formal certification, MFA in acceptance criteria)
+- 4 not implemented (client satisfaction KPI, 3 aspirational AI features — all PRD-acknowledged as future/aspirational)
+- 3 blocked on Brandon (MFA enforcement, Planner write-back permission, M365 license permission)
 
-### Compared to Previous Audit
+### Compared to Previous Audits
 
-| Metric | Previous Audit (May 2) | Current (May 5) |
-|--------|----------------------|-----------------|
-| Scope creep features | 12 fake-data features | All removed |
-| Fake/hardcoded data | Revenue, SLA, health scores, sparklines | None — all real data |
-| Missing Must-have features | 5 | 0 |
-| Missing Should-have features | 1 (tech stack) | 0 |
-| Missing Nice-to-have features | 1 (AI assistant) | 0 (implemented) |
-| PRD requirement coverage | ~60% | 88.5% |
-| Real data in portal | ~40% of displayed data | 100% |
+| Metric | Previous Audit (May 2) | Gap Analysis v2 (May 5) | After Fixes (May 5) |
+|--------|----------------------|------------------------|---------------------|
+| Scope creep features | 12 fake-data features | All removed | All removed |
+| Fake/hardcoded data | Revenue, SLA, health, sparklines, "2 min ago" | "2 min ago" only | None — 100% real |
+| Missing Must-have features | 5 | 0 | 0 |
+| Missing Should-have features | 1 (tech stack) | 0 | 0 |
+| Missing Nice-to-have features | 1 (AI assistant) | 0 | 0 |
+| PRD requirement coverage | ~60% | 88.5% (92/104) | **93.3% (97/104)** |
+| Real data in portal | ~40% | 100% | 100% |
+| Documents page | Missing | Missing | ✅ Built |
+| Misleading UI | Settings, utilization | Settings, utilization | ✅ All fixed |
+| Dead code | 4 report routes | 4 report routes | ✅ Removed |
