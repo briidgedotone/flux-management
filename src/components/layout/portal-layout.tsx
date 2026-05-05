@@ -48,11 +48,11 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
 
       <div
-        className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] h-screen flex flex-col ${
           isExpanded ? "lg:ml-[260px]" : "lg:ml-[72px]"
         }`}
       >
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <TopBar
             onSearchClick={() => setSearchOpen(true)}
             onNotificationClick={handleNotifClick}
@@ -72,7 +72,7 @@ export function PortalLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <main className="px-4 md:px-6 lg:px-10 py-8 max-w-[1200px] mx-auto pb-24 md:pb-8 animate-page-in">
+        <main className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-10 py-8 max-w-[1200px] mx-auto w-full pb-24 md:pb-8 animate-page-in">
           {children}
         </main>
       </div>
