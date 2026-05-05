@@ -101,28 +101,16 @@ function LoginContent() {
             Access restricted to Flux Technologies team members.
           </p>
 
-          {/* Dev login bypass — development only */}
+          {/* Dev login bypass */}
           {isDev && (
             <div className="mt-8 pt-6 border-t border-ice">
-              <p className="text-xs text-text-muted mb-3 font-medium uppercase tracking-wider">Dev Login (local only)</p>
+              <p className="text-xs text-text-muted mb-3 font-medium uppercase tracking-wider">Quick Login</p>
               <div className="space-y-2">
                 <button
-                  onClick={() => handleDevLogin()}
+                  onClick={() => handleDevLogin("development@flux.tech")}
                   className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
                 >
-                  Brandon Devier (Co-CEO)
-                </button>
-                <button
-                  onClick={() => handleDevLogin("zack@fluxtech.com")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
-                >
-                  Zack Devier (Co-CEO)
-                </button>
-                <button
-                  onClick={() => handleDevLogin("cameron@fluxtech.com")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors"
-                >
-                  Cameron (Employee)
+                  Dev Account
                 </button>
               </div>
             </div>
