@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useState, useMemo, useCallback } from "react";
-import { SortAscendingIcon, SortDescendingIcon } from "@phosphor-icons/react";
+import { SortAscending, SortDescending } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface Column<T> {
@@ -105,9 +105,9 @@ export function DataTable<T>({
                     >
                       {sort?.key === column.key &&
                       sort.direction === "desc" ? (
-                        <SortDescendingIcon size={14} weight="light" />
+                        <SortDescending size={14} weight="light" />
                       ) : (
-                        <SortAscendingIcon size={14} weight="light" />
+                        <SortAscending size={14} weight="light" />
                       )}
                     </span>
                   )}
