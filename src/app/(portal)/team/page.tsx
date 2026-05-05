@@ -93,24 +93,6 @@ export default function TeamPage() {
               </div>
             </div>
 
-            {/* Utilization Bar */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-text-muted uppercase tracking-[0.06em] font-medium">
-                  Utilization
-                </span>
-                <span className="text-xs text-text-secondary font-medium">
-                  {member.utilizationTarget ?? 0}%
-                </span>
-              </div>
-              <div className="w-full bg-ice-50 rounded-full h-1.5">
-                <div
-                  className="bg-blue rounded-full h-1.5 transition-all duration-500"
-                  style={{ width: `${member.utilizationTarget ?? 0}%` }}
-                />
-              </div>
-            </div>
-
             {/* Stats Row */}
             <div className="flex items-center gap-4 mt-3 text-xs text-text-secondary">
               <span>
