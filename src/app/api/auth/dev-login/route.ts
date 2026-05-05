@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }>(
       `SELECT id, email, name, role
        FROM users WHERE role = $1 AND is_active = true AND role != 'client'
-       ORDER BY name LIMIT 1`,
+       ORDER BY (email LIKE 'demo-%') DESC, name LIMIT 1`,
       [role],
     );
 
@@ -43,13 +43,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create JWT — use role label as display name (temporary, no real names in dev login)
-    const roleLabels: Record<string, string> = { "co-ceo": "Co-CEO", director: "Director", employee: "Employee" };
     const token = await new SignJWT({
       sub: rows[0].id,
       role: rows[0].role,
       email: rows[0].email,
-      name: roleLabels[rows[0].role] ?? rows[0].role,
+      name: rows[0].name,
       jti: randomUUID(),
     })
       .setProtectedHeader({ alg: "HS256" })

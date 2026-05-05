@@ -61,12 +61,11 @@ export async function withManagementAuth(
   if (!rl.allowed) return RATE_LIMIT_429;
 
   // 5. Build context — NO organizationId (management users are cross-org) [R27]
-  // Use JWT name if available (dev login overrides name to role label)
   const context: RequestContext = {
     user: {
       id: dbUser.id,
       email: dbUser.email,
-      name: sessionUser.name ?? dbUser.name,
+      name: dbUser.name,
       role: dbUser.role as UserRole,
     },
     role: dbUser.role as UserRole,
