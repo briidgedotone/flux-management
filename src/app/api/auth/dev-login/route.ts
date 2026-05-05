@@ -4,10 +4,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db/client";
-import { createSession } from "@/lib/auth/session";
-import type { AuthUser } from "@/types";
+import { SignJWT } from "jose";
+import { randomUUID } from "crypto";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3001";
+const JWT_SECRET = process.env.JWT_SECRET ?? "";
+const COOKIE_NAME = "flux-management-session";
+const MAX_AGE = 86400;
+const isProduction = process.env.NODE_ENV === "production";
 
 export async function GET(request: NextRequest) {
   if (process.env.ENABLE_TEST_LOGIN !== "true") {
@@ -17,36 +21,57 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const role = request.nextUrl.searchParams.get("role") ?? "co-ceo";
+  try {
+    const role = request.nextUrl.searchParams.get("role") ?? "co-ceo";
 
-  // Find any active management user with this role
-  const { rows } = await query<{
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-  }>(
-    `SELECT id, email, name, role
-     FROM users WHERE role = $1 AND is_active = true AND role != 'client'
-     ORDER BY name LIMIT 1`,
-    [role],
-  );
+    const { rows } = await query<{
+      id: string;
+      email: string;
+      name: string;
+      role: string;
+    }>(
+      `SELECT id, email, name, role
+       FROM users WHERE role = $1 AND is_active = true AND role != 'client'
+       ORDER BY name LIMIT 1`,
+      [role],
+    );
 
-  if (!rows[0]) {
+    if (!rows[0]) {
+      return NextResponse.json(
+        { error: { code: "NO_USERS", message: `No user with role "${role}" found` } },
+        { status: 404 },
+      );
+    }
+
+    // Create JWT
+    const token = await new SignJWT({
+      sub: rows[0].id,
+      role: rows[0].role,
+      email: rows[0].email,
+      name: rows[0].name,
+      jti: randomUUID(),
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime(`${MAX_AGE}s`)
+      .sign(new TextEncoder().encode(JWT_SECRET));
+
+    // Set cookie on redirect response directly
+    const response = NextResponse.redirect(new URL("/dashboard", APP_URL));
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax",
+      path: "/",
+      maxAge: MAX_AGE,
+    });
+
+    return response;
+  } catch (err) {
+    console.error("[dev-login] failed:", (err as Error).message);
     return NextResponse.json(
-      { error: { code: "NO_USERS", message: `No user with role "${role}" found` } },
-      { status: 404 },
+      { error: { code: "INTERNAL", message: "Login failed" } },
+      { status: 500 },
     );
   }
-
-  const user: AuthUser = {
-    id: rows[0].id,
-    email: rows[0].email,
-    name: rows[0].name,
-    role: rows[0].role as AuthUser["role"],
-  };
-
-  await createSession(user);
-
-  return NextResponse.redirect(new URL("/dashboard", APP_URL));
 }
