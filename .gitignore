@@ -39,3 +39,4 @@ product.md
 # Misc
 *.tsbuildinfo
 next-env.d.ts
+.vercel
