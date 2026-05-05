@@ -111,10 +111,15 @@ export interface Project {
 export interface ProjectTask {
   id: string;
   name: string;
+  description: string | null;
   status: TaskStatus;
   priority: TicketPriority;
-  assignee: { name: string; initials: string };
-  dueDate: string;
+  assignedToName: string | null;
+  assignedToEmail: string | null;
+  dueDate: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Document {

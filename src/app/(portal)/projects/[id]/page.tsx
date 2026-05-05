@@ -229,10 +229,10 @@ function TasksTab({ project }: { project: Project }) {
                 <div className="flex items-center justify-between mt-3">
                   <div
                     className="w-5 h-5 rounded-full bg-navy-80 flex items-center justify-center"
-                    title={task.assignee.name}
+                    title={task.assignedToName ?? "Unassigned"}
                   >
                     <span className="text-[7px] text-white font-medium leading-none">
-                      {task.assignee.initials}
+                      {task.assignedToName ? String(task.assignedToName).split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "?"}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-text-muted">
@@ -260,7 +260,7 @@ function TasksTab({ project }: { project: Project }) {
 function TimelineTab({ project }: { project: Project }) {
   /* Calculate bounds from project tasks */
   const tasks = project.tasks;
-  const allDates = tasks.map((t) => parseDate(t.dueDate).getTime());
+  const allDates = tasks.filter((t) => t.dueDate).map((t) => parseDate(t.dueDate!).getTime());
   const projectStart = parseDate(project.startDate).getTime();
   const projectEnd = parseDate(project.dueDate).getTime();
   const earliest = Math.min(projectStart, ...allDates);
@@ -313,7 +313,7 @@ function TimelineTab({ project }: { project: Project }) {
       {/* Task rows */}
       <div className="space-y-2">
         {tasks.map((task) => {
-          const taskDue = parseDate(task.dueDate).getTime();
+          const taskDue = task.dueDate ? parseDate(task.dueDate).getTime() : latest;
           /* Approximate task start as 14 days before due */
           const taskStart = Math.max(
             earliest,
