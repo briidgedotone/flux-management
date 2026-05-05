@@ -7,6 +7,7 @@ import {
   BuildingsIcon, AtIcon, PhoneIcon, XIcon, CalendarBlankIcon,
 } from "@phosphor-icons/react";
 import { useContactSubmissions, useUpdateSubmission } from "@/hooks/use-contact-submissions";
+import { Portal } from "@/components/shared/portal";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -125,6 +126,7 @@ function LeadSlideOver({ lead, onClose }: { lead: any; onClose: () => void }) {
   };
 
   return (
+    <Portal>
     <AnimatePresence>
       {lead && (
         <>
@@ -200,6 +202,7 @@ function LeadSlideOver({ lead, onClose }: { lead: any; onClose: () => void }) {
         </>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }
 

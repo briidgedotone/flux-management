@@ -3,6 +3,7 @@
 import { XIcon, PaperclipIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
 import { StatusBadge } from "./status-badge";
 import { PriorityIndicator } from "./priority-indicator";
+import { Portal } from "./portal";
 import { AnimatePresence, motion } from "framer-motion";
 
 /** Strip HTML tags and CSS, extract readable text. R19: no dangerouslySetInnerHTML. */
@@ -77,6 +78,7 @@ export function TicketSlideOver({ ticket, onClose }: TicketSlideOverProps) {
   const ticketNumber = ticket.ticketNumber ?? ticket.id;
 
   return (
+    <Portal>
     <AnimatePresence>
       {ticket && (
         <>
@@ -259,5 +261,6 @@ export function TicketSlideOver({ ticket, onClose }: TicketSlideOverProps) {
         </>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }

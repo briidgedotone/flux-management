@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { Portal } from "@/components/shared/portal";
 import {
   CaretLeftIcon, EnvelopeIcon, PhoneIcon, PencilSimpleIcon,
   TicketIcon, KanbanIcon, CheckCircleIcon, ClockIcon,
@@ -254,6 +255,7 @@ function ProfileSlideOver({ isOpen, onClose, client, clientId, onSaved }: {
   };
 
   return (
+    <Portal>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -304,6 +306,7 @@ function ProfileSlideOver({ isOpen, onClose, client, clientId, onSaved }: {
         </>
       )}
     </AnimatePresence>
+    </Portal>
   );
 }
 
