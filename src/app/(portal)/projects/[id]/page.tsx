@@ -20,7 +20,7 @@ import {
   Cell,
   ResponsiveContainer,
 } from "recharts";
-import { useProject } from "@/hooks/use-projects";
+import { useProject, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/use-projects";
 import { StatusBadge } from "@/components/shared/status-badge";
 import type { Project, ProjectTask, ProjectSubscription, TaskStatus, TicketPriority } from "@/data/types";
 import { cn } from "@/lib/utils";
@@ -172,9 +172,12 @@ export default function ProjectDetailPage() {
 }
 
 /* ================================================================== */
-/*  Tasks Tab (Kanban Board)                                           */
+/*  Tasks Tab (Kanban Board + CRUD)                                    */
 /* ================================================================== */
 function TasksTab({ project }: { project: Project }) {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+
   const groupedTasks = useMemo(() => {
     const map: Record<TaskStatus, ProjectTask[]> = {
       "To Do": [],
@@ -183,73 +186,51 @@ function TasksTab({ project }: { project: Project }) {
       Complete: [],
     };
     for (const task of project.tasks) {
-      map[task.status].push(task);
+      if (map[task.status]) map[task.status].push(task);
     }
     return map;
   }, [project.tasks]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-      {taskColumns.map((col) => (
-        <div key={col.status}>
-          {/* Column header */}
-          <div className="flex items-center gap-2 mb-3">
-            <span
-              className={cn("w-2 h-2 rounded-full shrink-0", col.dotColor)}
-            />
-            <span className="text-[13px] font-semibold text-text-primary">
-              {col.label}
-            </span>
-            <span className="text-[11px] font-medium text-text-muted bg-ice-30 px-2 py-0.5 rounded-full">
-              {groupedTasks[col.status].length}
-            </span>
-          </div>
+    <div>
+      {/* Add Task Button */}
+      <div className="flex justify-end mb-4">
+        <button onClick={() => setShowAddForm(!showAddForm)}
+          className="flex items-center gap-1.5 text-xs font-medium text-blue hover:text-blue-light transition-colors">
+          <PlusIcon size={14} weight="bold" /> Add Task
+        </button>
+      </div>
 
-          {/* Task cards */}
-          <div className="space-y-3">
-            {groupedTasks[col.status].map((task) => (
-              <div
-                key={task.id}
-                className="bg-white border border-ice rounded-lg p-3.5 hover:shadow-level-1 transition-shadow"
-              >
-                {/* Priority bar */}
-                <div
-                  className={cn(
-                    "w-full h-[3px] rounded-full mb-2.5",
-                    priorityBarColor[task.priority]
-                  )}
+      {showAddForm && <AddTaskForm projectId={project.id} onClose={() => setShowAddForm(false)} />}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        {taskColumns.map((col) => (
+          <div key={col.status}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className={cn("w-2 h-2 rounded-full shrink-0", col.dotColor)} />
+              <span className="text-[13px] font-semibold text-text-primary">{col.label}</span>
+              <span className="text-[11px] font-medium text-text-muted bg-ice-30 px-2 py-0.5 rounded-full">
+                {groupedTasks[col.status].length}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {groupedTasks[col.status].map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  projectId={project.id}
+                  isEditing={editingTaskId === task.id}
+                  onEdit={() => setEditingTaskId(editingTaskId === task.id ? null : task.id)}
+                  onClose={() => setEditingTaskId(null)}
                 />
-
-                {/* Task name */}
-                <p className="text-[13px] font-medium text-text-primary leading-snug">
-                  {task.name}
-                </p>
-
-                {/* Bottom row: avatar + due date */}
-                <div className="flex items-center justify-between mt-3">
-                  <div
-                    className="w-5 h-5 rounded-full bg-navy-80 flex items-center justify-center"
-                    title={task.assignedToName ?? "Unassigned"}
-                  >
-                    <span className="text-[7px] text-white font-medium leading-none">
-                      {task.assignedToName ? String(task.assignedToName).split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "?"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-text-muted">
-                    <CalendarBlankIcon size={11} weight="light" />
-                    <span className="text-[11px]">{task.dueDate}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {groupedTasks[col.status].length === 0 && (
-              <div className="text-center py-6 text-xs text-text-muted">
-                No tasks
-              </div>
-            )}
+              ))}
+              {groupedTasks[col.status].length === 0 && (
+                <div className="text-center py-6 text-xs text-text-muted">No tasks</div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -257,6 +238,119 @@ function TasksTab({ project }: { project: Project }) {
 /* ================================================================== */
 /*  Timeline Tab                                                       */
 /* ================================================================== */
+function TaskCard({ task, projectId, isEditing, onEdit, onClose }: {
+  task: ProjectTask; projectId: string; isEditing: boolean; onEdit: () => void; onClose: () => void;
+}) {
+  const updateMutation = useUpdateTask();
+  const deleteMutation = useDeleteTask();
+
+  const handleStatusChange = (newStatus: string) => {
+    updateMutation.mutate({ projectId, taskId: task.id, data: { status: newStatus } });
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (!confirm(`Delete task "${task.name}"?`)) return;
+    deleteMutation.mutate({ projectId, taskId: task.id });
+  };
+
+  return (
+    <div className="bg-white border border-ice rounded-lg p-3.5 hover:shadow-level-1 transition-shadow group">
+      <div className={cn("w-full h-[3px] rounded-full mb-2.5", priorityBarColor[task.priority])} />
+      <p className="text-[13px] font-medium text-text-primary leading-snug cursor-pointer" onClick={onEdit}>
+        {task.name}
+      </p>
+
+      {isEditing && (
+        <div className="mt-2 pt-2 border-t border-ice space-y-2">
+          <div className="flex flex-wrap gap-1">
+            {(["To Do", "In Progress", "Review", "Complete"] as TaskStatus[]).map((s) => (
+              <button key={s} onClick={() => handleStatusChange(s)} disabled={task.status === s}
+                className={cn("text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+                  task.status === s ? "bg-blue text-white border-blue" : "border-ice text-text-muted hover:border-blue hover:text-blue"
+                )}>{s}</button>
+            ))}
+          </div>
+          <button onClick={handleDelete} className="flex items-center gap-1 text-[10px] text-error hover:underline">
+            <TrashIcon size={10} weight="light" /> Delete
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mt-3">
+        <div className="w-5 h-5 rounded-full bg-navy-80 flex items-center justify-center"
+          title={task.assignedToName ?? "Unassigned"}>
+          <span className="text-[7px] text-white font-medium leading-none">
+            {task.assignedToName ? String(task.assignedToName).split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "?"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 text-text-muted">
+          <CalendarBlankIcon size={11} weight="light" />
+          <span className="text-[11px]">{task.dueDate ?? "No date"}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddTaskForm({ projectId, onClose }: { projectId: string; onClose: () => void }) {
+  const createMutation = useCreateTask();
+  const [form, setForm] = useState({ name: "", priority: "Medium", dueDate: "", assignedToName: "", assignedToEmail: "" });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    createMutation.mutate({
+      projectId,
+      data: {
+        name: form.name.trim(),
+        priority: form.priority,
+        dueDate: form.dueDate || undefined,
+        assignedToName: form.assignedToName || undefined,
+        assignedToEmail: form.assignedToEmail || undefined,
+        status: "To Do",
+      },
+    }, {
+      onSuccess: () => {
+        setForm({ name: "", priority: "Medium", dueDate: "", assignedToName: "", assignedToEmail: "" });
+        onClose();
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mb-4 p-4 bg-white border border-ice rounded-xl space-y-3">
+      <p className="text-sm font-semibold text-text-primary">New Task</p>
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required
+          placeholder="Task name *" className="col-span-2 h-9 px-3 text-xs rounded-lg border border-ice" />
+        <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}
+          className="h-9 px-3 text-xs rounded-lg border border-ice bg-white">
+          <option value="Critical">Critical</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
+        </select>
+        <input value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+          type="date" className="h-9 px-3 text-xs rounded-lg border border-ice" />
+        <div className="flex gap-2">
+          <button type="submit" disabled={createMutation.isPending}
+            className="h-9 px-4 text-xs font-medium bg-navy text-white rounded-lg hover:bg-navy-95 transition-colors disabled:opacity-50">
+            {createMutation.isPending ? "Adding..." : "Add"}
+          </button>
+          <button type="button" onClick={onClose} className="h-9 px-3 text-xs text-text-muted hover:text-text-primary">Cancel</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <input value={form.assignedToName} onChange={(e) => setForm({ ...form, assignedToName: e.target.value })}
+          placeholder="Assignee name" className="h-9 px-3 text-xs rounded-lg border border-ice" />
+        <input value={form.assignedToEmail} onChange={(e) => setForm({ ...form, assignedToEmail: e.target.value })}
+          type="email" placeholder="Assignee email" className="h-9 px-3 text-xs rounded-lg border border-ice" />
+      </div>
+    </form>
+  );
+}
+
 function TimelineTab({ project }: { project: Project }) {
   /* Calculate bounds from project tasks */
   const tasks = project.tasks;
