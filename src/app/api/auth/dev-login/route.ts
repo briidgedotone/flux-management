@@ -43,12 +43,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Create JWT
+    // Create JWT — use role label as display name (temporary, no real names in dev login)
+    const roleLabels: Record<string, string> = { "co-ceo": "Co-CEO", director: "Director", employee: "Employee" };
     const token = await new SignJWT({
       sub: rows[0].id,
       role: rows[0].role,
       email: rows[0].email,
-      name: rows[0].name,
+      name: roleLabels[rows[0].role] ?? rows[0].role,
       jti: randomUUID(),
     })
       .setProtectedHeader({ alg: "HS256" })
