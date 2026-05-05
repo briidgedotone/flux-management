@@ -47,7 +47,7 @@ export async function listDocuments(filters: { clientId?: string; search?: strin
   }));
 }
 
-/** Get all unique folder paths for building a folder tree. */
+/** Get all unique folder paths grouped by client for building a folder tree. */
 export async function getFolderPaths(clientId?: string) {
   const conditions: string[] = ["o.is_active = true"];
   const params: unknown[] = [];
@@ -59,15 +59,19 @@ export async function getFolderPaths(clientId?: string) {
   }
 
   const result = await query(
-    `SELECT DISTINCT d.folder_path
+    `SELECT DISTINCT d.folder_path, o.id AS client_id, o.name AS client_name
      FROM documents d
      JOIN organizations o ON d.organization_id = o.id
      WHERE ${conditions.join(" AND ")}
-     ORDER BY d.folder_path`,
+     ORDER BY o.name, d.folder_path`,
     params,
   );
 
-  return result.rows.map((r) => r.folder_path as string);
+  return result.rows.map((r) => ({
+    folderPath: r.folder_path as string,
+    clientId: r.client_id as string,
+    clientName: r.client_name as string,
+  }));
 }
 
 export async function getDocumentStats() {

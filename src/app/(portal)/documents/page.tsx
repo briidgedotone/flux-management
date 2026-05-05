@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   FolderSimple,
   FilePdf,
@@ -48,23 +48,62 @@ function formatDate(d: string | null): string {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-/** Build folder tree from flat paths. */
-function buildFolderTree(paths: string[]): FolderNode[] {
+interface FolderPathEntry {
+  folderPath: string;
+  clientId: string;
+  clientName: string;
+}
+
+/**
+ * Build folder tree from flat paths.
+ * When isAllClients=true, creates client-name folders at the root with their folder structures nested underneath.
+ * When a single client is selected, shows the raw folder hierarchy.
+ */
+function buildFolderTree(entries: FolderPathEntry[], isAllClients: boolean): FolderNode[] {
   const root: FolderNode[] = [];
 
-  for (const path of paths) {
-    const parts = path.split("/").filter(Boolean);
-    let current = root;
-    let acc = "";
-
-    for (const part of parts) {
-      acc += "/" + part;
-      let node = current.find((n) => n.name === part);
-      if (!node) {
-        node = { name: part, path: acc, children: [] };
-        current.push(node);
+  if (isAllClients) {
+    // Group by client, then nest folder paths under client name
+    const byClient = new Map<string, { name: string; paths: string[] }>();
+    for (const entry of entries) {
+      if (!byClient.has(entry.clientId)) {
+        byClient.set(entry.clientId, { name: entry.clientName, paths: [] });
       }
-      current = node.children;
+      byClient.get(entry.clientId)!.paths.push(entry.folderPath);
+    }
+
+    for (const [clientId, { name, paths }] of byClient) {
+      const clientNode: FolderNode = { name, path: `/@${clientId}`, children: [] };
+      for (const path of paths) {
+        const parts = path.split("/").filter(Boolean);
+        let current = clientNode.children;
+        let acc = `/@${clientId}`;
+        for (const part of parts) {
+          acc += "/" + part;
+          let node = current.find((n) => n.name === part);
+          if (!node) {
+            node = { name: part, path: acc, children: [] };
+            current.push(node);
+          }
+          current = node.children;
+        }
+      }
+      root.push(clientNode);
+    }
+  } else {
+    for (const entry of entries) {
+      const parts = entry.folderPath.split("/").filter(Boolean);
+      let current = root;
+      let acc = "";
+      for (const part of parts) {
+        acc += "/" + part;
+        let node = current.find((n) => n.name === part);
+        if (!node) {
+          node = { name: part, path: acc, children: [] };
+          current.push(node);
+        }
+        current = node.children;
+      }
     }
   }
 
@@ -183,23 +222,45 @@ export default function DocumentsPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [search, setSearch] = useState("");
 
+  // Reset to root when client filter changes
+  useEffect(() => { setCurrentPath("/"); setSearch(""); }, [clientId]);
+
   const { data: rawData, isLoading } = useDocuments({ clientId: clientId ?? undefined });
   const data = rawData as any;
   const documents: Doc[] = data?.documents ?? [];
-  const folderPaths: string[] = data?.folderPaths ?? [];
+  const folderPathEntries: FolderPathEntry[] = data?.folderPaths ?? [];
   const stats = data?.stats;
+  const isAllClients = !isFiltered;
 
-  const folderTree = useMemo(() => buildFolderTree(folderPaths), [folderPaths]);
+  const folderTree = useMemo(() => buildFolderTree(folderPathEntries, isAllClients), [folderPathEntries, isAllClients]);
   const breadcrumbs = useMemo(() => getBreadcrumbs(currentPath), [currentPath]);
   const childFolders = useMemo(() => getChildFolders(folderTree, currentPath), [folderTree, currentPath]);
 
+  // When navigating inside /@clientId/path, extract the real folder path and client filter
   const displayedFiles = useMemo(() => {
     if (search) {
       const q = search.toLowerCase();
       return documents.filter((d) => d.name.toLowerCase().includes(q));
     }
+
+    if (isAllClients && currentPath.startsWith("/@")) {
+      // Extract client ID and real folder path from virtual path
+      // e.g., "/@uuid/General/subfolder" → clientId=uuid, folderPath="/General/subfolder"
+      const withoutPrefix = currentPath.slice(2); // remove "/@"
+      const slashIdx = withoutPrefix.indexOf("/");
+      if (slashIdx === -1) {
+        // At client root — show all docs for this client at root "/"
+        const cId = withoutPrefix;
+        return documents.filter((d) => d.clientId === cId && d.folderPath === "/");
+      } else {
+        const cId = withoutPrefix.slice(0, slashIdx);
+        const realPath = withoutPrefix.slice(slashIdx);
+        return documents.filter((d) => d.clientId === cId && d.folderPath === realPath);
+      }
+    }
+
     return documents.filter((d) => d.folderPath === currentPath);
-  }, [documents, currentPath, search]);
+  }, [documents, currentPath, search, isAllClients]);
 
   const navigate = (path: string) => { setCurrentPath(path); setSearch(""); };
   const hasFolders = !search && childFolders.length > 0;
