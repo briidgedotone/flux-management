@@ -48,7 +48,7 @@ The management portal follows the same security standards as the client portal:
 ## 3. Authentication Security
 
 ### Separate App Registration
-- Management portal uses its own Azure AD app registration (`flux-management-portal`)
+- Management portal uses its own Azure AD app registration (`flux-management-dev`)
 - Separate from client portal's `flux-clientportal-dev`
 - Only Flux employees can see/access the management app in Azure AD
 

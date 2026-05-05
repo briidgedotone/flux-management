@@ -8,40 +8,27 @@ import {
   ShieldCheckIcon, CaretRightIcon,
   ArrowsClockwiseIcon, CalendarBlankIcon, PlusIcon, ExportIcon,
   RobotIcon, ArrowUpIcon, ArrowDownIcon,
+  StackIcon, DesktopIcon, CloudIcon,
 } from "@phosphor-icons/react";
 import {
-  ComposedChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Line, CartesianGrid, Legend, PieChart, Pie, Cell,
-  AreaChart, Area,
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend,
 } from "recharts";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
 import { TicketSlideOver } from "@/components/shared/ticket-slide-over";
-import { mockTickets } from "@/data/mock-tickets";
-import { mockProjects } from "@/data/mock-projects";
-import { ticketActivity7Days, ticketActivity30Days, ticketActivity90Days } from "@/data/mock-chart-data";
-import { mockClients } from "@/data/mock-clients";
-import { mockTeamMembers } from "@/data/mock-team";
+import { useDashboard } from "@/hooks/use-dashboard";
+import { useTickets, useTicketChartData } from "@/hooks/use-tickets";
+import { useProjects } from "@/hooks/use-projects";
+import { useTechStack } from "@/hooks/use-tech-stack";
+import { useAuth } from "@/hooks/use-auth";
+import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Ticket } from "@/data/types";
 import { cn } from "@/lib/utils";
 
-/* Sparkline data (last 7 data points for inline micro-charts) */
-const revenueSparkline = [
-  { v: 98 }, { v: 105 }, { v: 95 }, { v: 112 }, { v: 118 }, { v: 115 }, { v: 118.5 },
-];
-const ticketSparkline = [
-  { v: 8 }, { v: 12 }, { v: 10 }, { v: 14 }, { v: 11 }, { v: 9 }, { v: 10 },
-];
-const slaSparkline = [
-  { v: 94.2 }, { v: 95.1 }, { v: 93.8 }, { v: 95.6 }, { v: 96.2 }, { v: 95.8 }, { v: 96.2 },
-];
+/* Sparklines removed — were hardcoded fake data, not from any API */
 
 type ChartRange = "7d" | "30d" | "90d";
-const chartDataMap: Record<ChartRange, typeof ticketActivity7Days> = {
-  "7d": ticketActivity7Days,
-  "30d": ticketActivity30Days,
-  "90d": ticketActivity90Days,
-};
 const chartLabels: Record<ChartRange, string> = { "7d": "7 Days", "30d": "30 Days", "90d": "90 Days" };
 
 const statusDotColor: Record<string, string> = {
@@ -50,11 +37,16 @@ const statusDotColor: Record<string, string> = {
   Delayed: "bg-error",
 };
 
-const projectStatusData = [
-  { name: "On Track", value: 3, color: "#0D7C5F" },
-  { name: "At Risk", value: 1, color: "#B8860B" },
-  { name: "Delayed", value: 1, color: "#C53030" },
-];
+function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 const todayFormatted = new Date().toLocaleDateString("en-US", {
   weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -66,13 +58,31 @@ export default function DashboardPage() {
   const [chartRange, setChartRange] = useState<ChartRange>("7d");
   const [syncing, setSyncing] = useState(false);
 
+  const { data: auth } = useAuth();
+  const { clientId, clientName, isFiltered } = useClientFilter();
+  const { data: dashboard, isLoading } = useDashboard();
+  const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc", clientId: clientId ?? undefined });
+  const { data: projectsData } = useProjects({ limit: 10, sort: "created_at", order: "desc", clientId: clientId ?? undefined });
+  const { data: chartData } = useTicketChartData(chartRange);
+  const { data: techStackRaw } = useTechStack(clientId ?? undefined);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const techStats = (techStackRaw as any)?.stats;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ticketChartData: any[] = (chartData as any[]) ?? [];
+
   const handleSync = () => {
     setSyncing(true);
     setTimeout(() => setSyncing(false), 500);
   };
 
-  const openTickets = mockTickets.filter((t) => t.status === "Open");
-  const recentTickets = mockTickets.slice(0, 5);
+  const d = dashboard;
+  const recentTickets = (ticketsData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+  const activeProjects = (projectsData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+  const projectStatusData = d ? [
+    { name: "On Track", value: d.projects.onTrack, color: "#0D7C5F" },
+    { name: "At Risk", value: d.projects.atRisk, color: "#B8860B" },
+    { name: "Delayed", value: d.projects.delayed, color: "#C53030" },
+  ] : [];
 
   return (
     <div className="space-y-8">
@@ -80,10 +90,10 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-9 tracking-[-0.02em] text-text-primary">
-            Good morning, Alex
+            Good morning{auth?.name ? `, ${auth.name.split(" ")[0]}` : ""}
           </h1>
           <p className="text-sm text-text-secondary mt-0.5">
-            Here&apos;s your management overview
+            {isFiltered ? `Viewing ${clientName}` : "Here's your management overview"}
           </p>
         </div>
         <div className="flex items-center gap-3 text-text-muted">
@@ -100,7 +110,7 @@ export default function DashboardPage() {
               weight="light"
               className={syncing ? "animate-spin" : ""}
             />
-            Last synced: 2 min ago
+            {d?.lastSyncedAt ? `Last synced: ${formatTimeAgo(d.lastSyncedAt)}` : "Syncing..."}
           </button>
         </div>
       </div>
@@ -114,47 +124,30 @@ export default function DashboardPage() {
         role="region"
         aria-label="Key metrics overview"
       >
-        {/* Panel 1: Clients & Revenue */}
+        {/* Panel 1: Clients Overview */}
         <button
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/clients")}
-          aria-label={`Revenue $118.5K, up 8%. ${mockClients.filter(c => c.contractStatus === "active").length} active clients, ${mockClients.filter(c => c.contractStatus === "expiring").length} expiring. Click to view clients.`}
+          aria-label={`${d?.clients.total ?? 0} active clients. ${d?.tickets.total ?? 0} total tickets. Click to view clients.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  $118.5K
+                  {d?.clients.total ?? "—"}
                 </span>
-                <TrendBadge value="8%" direction="up" sentiment="positive" />
+                <span className="text-[12px] text-text-muted">active clients</span>
               </div>
-              <span className="text-[11px] text-text-muted">Monthly Revenue</span>
-            </div>
-            <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueSparkline} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="revSpk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0D7C5F" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#0D7C5F" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#0D7C5F" strokeWidth={1.5} fill="url(#revSpk)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
+              <span className="text-[11px] text-text-muted">
+                {d?.tickets.total ?? 0} total tickets across all clients
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <BuildingsIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">{mockClients.filter(c => c.contractStatus === "active").length}</span>
-            <span className="text-text-muted">active clients</span>
-            {mockClients.filter(c => c.contractStatus === "expiring").length > 0 && (
-              <>
-                <span className="text-text-muted" aria-hidden="true">&middot;</span>
-                <span className="text-warning font-medium">{mockClients.filter(c => c.contractStatus === "expiring").length} expiring</span>
-              </>
-            )}
+            <span className="font-semibold text-text-primary">{d?.tickets.resolvedLast30d ?? 0}</span>
+            <span className="text-text-muted">tickets resolved this month</span>
           </div>
         </button>
 
@@ -163,46 +156,25 @@ export default function DashboardPage() {
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/tickets")}
-          aria-label={`${openTickets.length} open tickets, up 3. ${mockTickets.filter(t => t.priority === "Critical").length} critical, ${mockTickets.filter(t => t.status === "Pending").length} pending. SLA 96.2%, up 1.1%. Click to view tickets.`}
+          aria-label={`${d?.tickets.open ?? 0} open tickets. ${d?.tickets.critical ?? 0} critical, ${d?.tickets.pending ?? 0} pending. Click to view tickets.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  {openTickets.length}
+                  {d?.tickets.open ?? "—"}
                 </span>
                 <span className="text-[12px] text-text-muted">open tickets</span>
-                <TrendBadge value="3" direction="up" sentiment="negative" />
               </div>
               <span className="text-[11px] text-text-muted">
-                {mockTickets.filter(t => t.priority === "Critical").length} critical, {mockTickets.filter(t => t.status === "Pending").length} pending
+                {d?.tickets.critical ?? 0} critical, {d?.tickets.pending ?? 0} pending
               </span>
-            </div>
-            <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={ticketSparkline} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="tkSpk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#C53030" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#C53030" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#C53030" strokeWidth={1.5} fill="url(#tkSpk)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <ShieldCheckIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">96.2%</span>
-            <span className="text-text-muted">SLA</span>
-            <TrendBadge value="1.1%" direction="up" sentiment="positive" />
-            {mockClients.filter(c => c.slaCompliance < 90).length > 0 && (
-              <>
-                <span aria-hidden="true">&middot;</span>
-                <span className="text-warning font-medium">{mockClients.filter(c => c.slaCompliance < 90).length} below target</span>
-              </>
-            )}
+            <span className="font-semibold text-text-primary">{d ? `${Math.round(d.tickets.avgResolutionHours)}h avg` : "—"}</span>
+            <span className="text-text-muted">resolution</span>
           </div>
         </button>
 
@@ -211,48 +183,74 @@ export default function DashboardPage() {
           type="button"
           className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 text-left card-hover-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2 transition-shadow"
           onClick={() => router.push("/projects")}
-          aria-label={`${mockProjects.filter((p) => p.progress < 100).length} active projects. ${mockProjects.filter(p => p.status === "At Risk").length} at risk, ${mockProjects.filter(p => p.status === "Delayed").length} delayed. ${mockTeamMembers.filter(m => m.status === "active").length} team members, ${Math.round(mockTeamMembers.filter(m => m.status === "active").reduce((s, m) => s + m.utilization, 0) / mockTeamMembers.filter(m => m.status === "active").length)}% utilized. Click to view projects.`}
+          aria-label={`${d?.projects.total ?? 0} active projects. ${d?.projects.atRisk ?? 0} at risk, ${d?.projects.delayed ?? 0} delayed. ${d?.team.totalMembers ?? 0} team members. Click to view projects.`}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-[family-name:var(--font-aptos)] font-bold text-[28px] leading-tight tracking-[-0.02em] text-navy">
-                  {mockProjects.filter((p) => p.progress < 100).length}
+                  {d?.projects.total ?? "—"}
                 </span>
                 <span className="text-[12px] text-text-muted">active projects</span>
               </div>
               <span className="text-[11px] text-text-muted">
-                {mockProjects.filter(p => p.status === "At Risk").length + mockProjects.filter(p => p.status === "Delayed").length > 0
-                  ? `${mockProjects.filter(p => p.status === "At Risk").length} at risk, ${mockProjects.filter(p => p.status === "Delayed").length} delayed`
+                {d && (d.projects.atRisk + d.projects.delayed) > 0
+                  ? `${d.projects.atRisk} at risk, ${d.projects.delayed} delayed`
                   : "All on track"
                 }
               </span>
             </div>
-            <div className="w-[72px] h-[36px] shrink-0" aria-hidden="true">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={slaSparkline} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
-                  <defs>
-                    <linearGradient id="slaSpk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#15549D" stopOpacity={0.2} />
-                      <stop offset="100%" stopColor="#15549D" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Area type="monotone" dataKey="v" stroke="#15549D" strokeWidth={1.5} fill="url(#slaSpk)" dot={false} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
           </div>
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-ice/60 text-[12px]" aria-hidden="true">
             <UsersThreeIcon size={13} weight="light" className="text-text-muted" />
-            <span className="font-semibold text-text-primary">{mockTeamMembers.filter(m => m.status === "active").length}</span>
+            <span className="font-semibold text-text-primary">{d?.team.totalMembers ?? 0}</span>
             <span className="text-text-muted">team members</span>
-            <span aria-hidden="true">&middot;</span>
-            <span className="text-text-secondary font-medium">
-              {Math.round(mockTeamMembers.filter(m => m.status === "active").reduce((s, m) => s + m.utilization, 0) / mockTeamMembers.filter(m => m.status === "active").length)}% utilized
-            </span>
           </div>
         </button>
       </motion.div>
+
+      {/* Tech Stack Health — only shown when there's data */}
+      {techStats && (techStats.software.total > 0 || techStats.infrastructure.total > 0 || techStats.cloud.total > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-10 flex items-center justify-center">
+              <StackIcon size={18} weight="light" className="text-blue" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{techStats.software.total} software</p>
+              <p className="text-xs text-text-muted">
+                {techStats.software.expiring > 0
+                  ? <span className="text-warning">{techStats.software.expiring} expiring soon</span>
+                  : "All active"
+                }
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-success-tint flex items-center justify-center">
+              <DesktopIcon size={18} weight="light" className="text-success" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{techStats.infrastructure.total} devices</p>
+              <p className="text-xs text-text-muted">
+                {techStats.infrastructure.offline > 0
+                  ? <span className="text-error">{techStats.infrastructure.offline} offline</span>
+                  : "All online"
+                }
+              </p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-10 flex items-center justify-center">
+              <CloudIcon size={18} weight="light" className="text-blue" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">{techStats.cloud.total} cloud services</p>
+              <p className="text-xs text-text-muted">{techStats.cloud.active} active</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -278,25 +276,34 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={chartDataMap[chartRange]} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ECEEF2" vertical={false} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#002B4D", border: "none", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
-                itemStyle={{ color: "#fff" }}
-                labelStyle={{ color: "#A3B8CC", marginBottom: "4px" }}
-              />
-              <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8}
-                formatter={(value: string) => <span className="text-xs text-text-muted capitalize">{value}</span>}
-              />
-              <Bar dataKey="open" stackId="tickets" fill="#C53030" radius={[0, 0, 0, 0]} barSize={24} />
-              <Bar dataKey="pending" stackId="tickets" fill="#B8860B" radius={[0, 0, 0, 0]} barSize={24} />
-              <Bar dataKey="closed" stackId="tickets" fill="#0D7C5F" radius={[2, 2, 0, 0]} barSize={24} />
-              <Line type="monotone" dataKey="total" stroke="#15549D" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
+          {ticketChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={ticketChartData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ECEEF2" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#8896A6" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: string) => new Date(v).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                />
+                <YAxis tick={{ fontSize: 11, fill: "#8896A6" }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#002B4D", border: "none", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
+                  labelFormatter={(v) => new Date(String(v)).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={8}
+                  formatter={(value: string) => <span className="text-xs text-text-muted capitalize">{value}</span>}
+                />
+                <Bar dataKey="created" name="Created" fill="#C53030" radius={[2, 2, 0, 0]} barSize={chartRange === "7d" ? 24 : chartRange === "30d" ? 10 : 4} />
+                <Bar dataKey="resolved" name="Resolved" fill="#0D7C5F" radius={[2, 2, 0, 0]} barSize={chartRange === "7d" ? 24 : chartRange === "30d" ? 10 : 4} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-[220px] text-center">
+              <p className="text-sm text-text-muted">No ticket activity data available for this period.</p>
+            </div>
+          )}
         </div>
 
         {/* Projects by Status - 1 col */}
@@ -348,19 +355,18 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {recentTickets.map((ticket) => (
+              {recentTickets.map((ticket: Record<string, unknown>) => (
                 <motion.tr
-                  key={ticket.id}
+                  key={ticket.id as string}
                   whileHover={{ backgroundColor: "rgba(232,240,250,0.4)" }}
-                  onClick={() => setSelectedTicket(ticket)}
                   className="border-b border-ice last:border-0 cursor-pointer transition-colors"
                 >
-                  <td className="py-3 pr-4"><span className="font-mono text-sm text-blue">#{ticket.id}</span></td>
-                  <td className="py-3 pr-4 text-sm text-text-primary max-w-[220px] truncate">{ticket.subject}</td>
-                  <td className="py-3 pr-4 text-xs text-text-secondary">{ticket.clientName}</td>
-                  <td className="py-3 pr-4"><StatusBadge status={ticket.status} /></td>
-                  <td className="py-3 pr-4"><PriorityIndicator priority={ticket.priority} /></td>
-                  <td className="py-3 text-xs text-text-muted whitespace-nowrap">{ticket.updated}</td>
+                  <td className="py-3 pr-4"><span className="font-mono text-sm text-blue">#{ticket.ticketNumber as string}</span></td>
+                  <td className="py-3 pr-4 text-sm text-text-primary max-w-[220px] truncate">{ticket.subject as string}</td>
+                  <td className="py-3 pr-4 text-xs text-text-secondary">{ticket.clientName as string}</td>
+                  <td className="py-3 pr-4"><StatusBadge status={ticket.status as "Open" | "Pending" | "Closed"} /></td>
+                  <td className="py-3 pr-4"><PriorityIndicator priority={ticket.priority as "Critical" | "High" | "Medium" | "Low"} /></td>
+                  <td className="py-3 text-xs text-text-muted whitespace-nowrap">{ticket.updatedAt ? new Date(ticket.updatedAt as string).toLocaleDateString() : ""}</td>
                 </motion.tr>
               ))}
             </tbody>
@@ -382,27 +388,27 @@ export default function DashboardPage() {
           </button>
         </div>
         <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
-          {mockProjects.map((project) => (
+          {activeProjects.map((project: Record<string, unknown>) => (
             <div
-              key={project.id}
+              key={project.id as string}
               className="min-w-[300px] border border-ice/50 rounded-2xl p-5 bg-white shrink-0 hover:shadow-level-2 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               onClick={() => router.push(`/projects/${project.id}`)}
             >
               <p className="font-[family-name:var(--font-aptos)] font-semibold text-sm text-text-primary truncate">
-                {project.name}
+                {project.name as string}
               </p>
-              <p className="text-xs text-text-muted mt-0.5">{project.clientName}</p>
+              <p className="text-xs text-text-muted mt-0.5">{project.clientName as string}</p>
               <div className="flex items-center gap-1.5 mt-2">
-                <span className={`w-2 h-2 rounded-full ${statusDotColor[project.status]}`} />
-                <span className="text-xs text-text-secondary">{project.status}</span>
+                <span className={`w-2 h-2 rounded-full ${statusDotColor[project.status as string] ?? "bg-gray-400"}`} />
+                <span className="text-xs text-text-secondary">{project.status as string}</span>
               </div>
               <div className="mt-3 w-full bg-ice-50 rounded-full h-1.5">
                 <div className="bg-blue h-1.5 rounded-full transition-all" style={{ width: `${project.progress}%` }} />
               </div>
               <div className="flex items-center justify-between mt-2.5">
-                <span className="text-xs text-text-muted">{project.tasksCompleted}/{project.totalTasks} tasks</span>
+                <span className="text-xs text-text-muted">{project.tasksCompleted as number}/{project.totalTasks as number} tasks</span>
                 <span className="flex items-center gap-1 text-xs text-text-muted">
-                  <CalendarBlankIcon size={12} weight="light" />{project.dueDate}
+                  <CalendarBlankIcon size={12} weight="light" />{project.dueDate as string}
                 </span>
               </div>
             </div>

@@ -3,31 +3,19 @@
 import { useState, useRef, useEffect } from "react";
 import { RobotIcon, PaperPlaneRightIcon, PaperclipIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { aiResponses } from "@/data/mock-ai-responses";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { useConversations, useSendMessage } from "@/hooks/use-ai";
 import type { AIMessage } from "@/data/types";
 
 const suggestedQueries = [
   "Show all critical tickets across clients",
-  "Which clients have at-risk health scores?",
-  "What's the team utilization this month?",
-  "Summarize revenue trends by client",
-  "List projects that are behind schedule",
-  "Show SLA compliance across all clients",
+  "What software does Armada Analytics use?",
+  "Which projects are behind schedule?",
+  "How many tickets were resolved this week?",
+  "Give me a summary of our team workload",
+  "What's the tech stack overview for all clients?",
 ];
-
-function getAIResponse(message: string): { content: string; source: string } {
-  const lower = message.toLowerCase();
-  for (const [key, response] of Object.entries(aiResponses)) {
-    const keywords = key.split(",").map((k) => k.trim().toLowerCase());
-    if (keywords.some((kw) => lower.includes(kw))) {
-      return response;
-    }
-  }
-  return {
-    content: "I can help you with management insights across all your clients. Try asking about tickets, projects, team performance, revenue, or client health scores.",
-    source: "Flux AI Assistant",
-  };
-}
 
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState<AIMessage[]>([]);
@@ -35,6 +23,11 @@ export default function AIAssistantPage() {
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  const { data: rawConversations } = useConversations();
+  const conversations = (rawConversations as any)?.data ?? [];
+  const sendMessageMutation = useSendMessage();
 
   const scrollToBottom = () => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -53,15 +46,34 @@ export default function AIAssistantPage() {
     setInput("");
     setIsTyping(true);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-    setTimeout(() => {
-      const response = getAIResponse(msg);
-      const aiMessage: AIMessage = {
-        id: (Date.now() + 1).toString(), role: "assistant", content: response.content,
-        timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsTyping(false);
-    }, 1200 + Math.random() * 800);
+
+    sendMessageMutation.mutate(
+      { conversationId, message: msg },
+      {
+        onSuccess: (response: any) => {
+          const data = response?.data ?? response;
+          if (data?.conversationId) setConversationId(data.conversationId);
+          const aiMessage: AIMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: data?.message?.content ?? data?.reply ?? data?.content ?? "I received your message.",
+            timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+          };
+          setMessages((prev) => [...prev, aiMessage]);
+          setIsTyping(false);
+        },
+        onError: () => {
+          const errorMessage: AIMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "Sorry, I encountered an error. Please try again.",
+            timestamp: new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+          setIsTyping(false);
+        },
+      }
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -111,10 +123,39 @@ export default function AIAssistantPage() {
                       <RobotIcon size={16} weight="light" className="text-blue" />
                     </div>
                   )}
-                  <div className={`max-w-[${msg.role === "user" ? "70" : "85"}%]`}>
-                    <div className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                      msg.role === "user" ? "bg-blue text-white rounded-3xl rounded-br-sm" : "bg-white border border-ice rounded-3xl rounded-tl-sm"
-                    }`}>{msg.content}</div>
+                  <div className={msg.role === "user" ? "max-w-[70%]" : "max-w-[85%]"}>
+                    {msg.role === "user" ? (
+                      <div className="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap bg-blue text-white rounded-3xl rounded-br-sm">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <div className="text-sm leading-relaxed ai-prose">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({ children }) => (
+                              <div className="my-3 rounded-lg overflow-hidden border border-ice/70">
+                                <table className="w-full border-collapse text-[13px]">{children}</table>
+                              </div>
+                            ),
+                            thead: ({ children }) => (
+                              <thead className="bg-ice">{children}</thead>
+                            ),
+                            th: ({ children }) => (
+                              <th className="px-4 py-2.5 text-left font-semibold text-[11px] uppercase tracking-[0.06em] text-text-secondary">{children}</th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="px-4 py-2.5 text-text-primary border-t border-ice/60">{children}</td>
+                            ),
+                            tr: ({ children, ...props }) => (
+                              <tr className="even:bg-ice/30" {...props}>{children}</tr>
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                     <p className={`text-[11px] text-text-muted mt-1 ${msg.role === "user" ? "text-right" : ""}`}>{msg.timestamp}</p>
                   </div>
                 </motion.div>

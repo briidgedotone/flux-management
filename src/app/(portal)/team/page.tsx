@@ -5,22 +5,28 @@ import {
   EnvelopeIcon,
   PlusIcon,
 } from "@phosphor-icons/react";
-import { mockTeamMembers } from "@/data/mock-team";
+import { useTeam } from "@/hooks/use-team";
 import type { TeamMember } from "@/data/types";
 
-const roleBadge: Record<TeamMember["role"], string> = {
+const roleBadge: Record<string, string> = {
   "co-ceo": "bg-blue-10 text-blue",
   director: "bg-success-tint text-success",
   employee: "bg-ice-30 text-text-secondary",
+  admin: "bg-blue-10 text-blue",
 };
 
-const roleLabel: Record<TeamMember["role"], string> = {
+const roleLabel: Record<string, string> = {
   "co-ceo": "Co-CEO",
   director: "Director",
   employee: "Employee",
+  admin: "Admin",
 };
 
 export default function TeamPage() {
+  const { data: rawData, isLoading, error } = useTeam();
+  // api.get unwraps { data: T } → T, so rawData is the array directly
+  const teamMembers: any[] = (rawData as any[]) ?? [];
+
   return (
     <div className="space-y-6">
       {/* ── Header ── */}
@@ -36,15 +42,18 @@ export default function TeamPage() {
             <p className="text-xs text-text-muted">Manage team members</p>
           </div>
         </div>
-        <button className="flex items-center gap-1.5 px-4 py-2 bg-blue text-white text-sm font-medium rounded-lg hover:bg-blue/90 transition-colors">
-          <PlusIcon size={16} weight="bold" />
-          Invite Member
-        </button>
+{/* Invite Member — not yet implemented */}
       </div>
 
       {/* ── Team Grid ── */}
+      {isLoading && (
+        <div className="text-center py-12 text-sm text-text-muted">Loading team...</div>
+      )}
+      {error && (
+        <div className="text-center py-12 text-sm text-error">Failed to load team members.</div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {mockTeamMembers.map((member) => (
+        {teamMembers.map((member) => (
           <div
             key={member.id}
             className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-5 hover:shadow-level-2 hover:-translate-y-0.5 transition-all duration-200"
@@ -84,24 +93,6 @@ export default function TeamPage() {
               </div>
             </div>
 
-            {/* Utilization Bar */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] text-text-muted uppercase tracking-[0.06em] font-medium">
-                  Utilization
-                </span>
-                <span className="text-xs text-text-secondary font-medium">
-                  {member.utilization}%
-                </span>
-              </div>
-              <div className="w-full bg-ice-50 rounded-full h-1.5">
-                <div
-                  className="bg-blue rounded-full h-1.5 transition-all duration-500"
-                  style={{ width: `${member.utilization}%` }}
-                />
-              </div>
-            </div>
-
             {/* Stats Row */}
             <div className="flex items-center gap-4 mt-3 text-xs text-text-secondary">
               <span>
@@ -112,10 +103,12 @@ export default function TeamPage() {
               </span>
             </div>
 
-            {/* Last Active */}
-            <p className="text-xs text-text-muted mt-3">
-              Last active: {member.lastActive}
-            </p>
+            {/* Department */}
+            {member.department && (
+              <p className="text-xs text-text-muted mt-3">
+                {member.department}
+              </p>
+            )}
           </div>
         ))}
       </div>

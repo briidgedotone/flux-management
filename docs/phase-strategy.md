@@ -69,7 +69,7 @@ Unlike the client portal (which had multiple rounds of blocked credentials), the
 - No external dependencies
 
 **Phase 2 — Authentication**
-- Create a new Azure AD app registration (`flux-management-portal`) — we have admin access
+- Create a new Azure AD app registration (`flux-management-dev`) — we have admin access
 - Adapt JWT/session code from client portal
 - Build middleware (`withManagementAuth`, `withRole`)
 - Wire login page

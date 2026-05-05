@@ -13,7 +13,8 @@ import {
   CalendarBlankIcon,
   DotsThreeVerticalIcon,
 } from "@phosphor-icons/react";
-import { mockProjects } from "@/data/mock-projects";
+import { useProjects } from "@/hooks/use-projects";
+import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Project, ProjectStatus } from "@/data/types";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -22,7 +23,7 @@ import { cn } from "@/lib/utils";
 
 type ViewMode = "cards" | "list" | "timeline";
 
-const statusDotColor: Record<ProjectStatus, string> = {
+const statusDotColor: Record<string, string> = {
   "On Track": "bg-success",
   "At Risk": "bg-warning",
   Delayed: "bg-error",
@@ -38,14 +39,15 @@ const priorityBarColor: Record<string, string> = {
 /* ------------------------------------------------------------------ */
 /*  Helper: parse "Mon DD, YYYY" string to a Date                      */
 /* ------------------------------------------------------------------ */
-function parseDate(str: string): Date {
-  return new Date(str.replace(",", ""));
+function parseDate(str: string | null | undefined): Date {
+  if (!str) return new Date();
+  return new Date(str);
 }
 
 /* ------------------------------------------------------------------ */
 /*  Timeline helpers                                                    */
 /* ------------------------------------------------------------------ */
-function getTimelineBounds(projects: Project[]) {
+function getTimelineBounds(projects: any[]) {
   let earliest = Infinity;
   let latest = -Infinity;
   for (const p of projects) {
@@ -66,24 +68,28 @@ function pct(value: number, earliest: number, span: number) {
 /* ------------------------------------------------------------------ */
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const { clientId, clientName, isFiltered } = useClientFilter();
+  const { data: rawData, isLoading, error } = useProjects(clientId ? { clientId } : {});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const projects: any[] = (rawData as any)?.data ?? [];
 
   /* KPI calculations */
-  const activeCount = mockProjects.filter(
+  const activeCount = projects.filter(
     (p) => p.status === "On Track" || p.status === "At Risk"
   ).length;
 
-  const totalCompleted = mockProjects.reduce(
+  const totalCompleted = projects.reduce(
     (sum, p) => sum + p.tasksCompleted,
     0
   );
-  const totalTasks = mockProjects.reduce((sum, p) => sum + p.totalTasks, 0);
+  const totalTasks = projects.reduce((sum, p) => sum + p.totalTasks, 0);
 
-  const onTrackCount = mockProjects.filter(
+  const onTrackCount = projects.filter(
     (p) => p.status === "On Track"
   ).length;
   const onTrackPct =
-    mockProjects.length > 0
-      ? Math.round((onTrackCount / mockProjects.length) * 100)
+    projects.length > 0
+      ? Math.round((onTrackCount / projects.length) * 100)
       : 0;
 
   /* View toggle buttons config */
@@ -149,9 +155,15 @@ export default function ProjectsPage() {
       </div>
 
       {/* ── View Body ── */}
-      {viewMode === "cards" && <CardsView projects={mockProjects} />}
-      {viewMode === "list" && <ListView projects={mockProjects} />}
-      {viewMode === "timeline" && <TimelineView projects={mockProjects} />}
+      {isLoading && (
+        <div className="text-center py-12 text-sm text-text-muted">Loading projects...</div>
+      )}
+      {error && (
+        <div className="text-center py-12 text-sm text-error">Failed to load projects.</div>
+      )}
+      {!isLoading && !error && viewMode === "cards" && <CardsView projects={projects} />}
+      {!isLoading && !error && viewMode === "list" && <ListView projects={projects} />}
+      {!isLoading && !error && viewMode === "timeline" && <TimelineView projects={projects} />}
     </div>
   );
 }
@@ -159,7 +171,7 @@ export default function ProjectsPage() {
 /* ================================================================== */
 /*  Cards View                                                         */
 /* ================================================================== */
-function CardsView({ projects }: { projects: Project[] }) {
+function CardsView({ projects }: { projects: any[] }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       {projects.map((project, idx) => (
@@ -221,18 +233,18 @@ function CardsView({ projects }: { projects: Project[] }) {
 
                 {/* Stacked avatars */}
                 <div className="flex items-center -space-x-2">
-                  {project.assignees.slice(0, 4).map((a, i) => (
+                  {(project.assignees ?? []).slice(0, 4).map((a: any, i: number) => (
                     <div
-                      key={a.initials + i}
+                      key={(a.initials ?? i) + i}
                       className="w-6 h-6 rounded-full bg-navy-80 flex items-center justify-center ring-2 ring-white"
                       title={a.name}
                     >
                       <span className="text-[8px] text-white font-medium leading-none">
-                        {a.initials}
+                        {a.initials ?? a.name?.[0] ?? "?"}
                       </span>
                     </div>
                   ))}
-                  {project.assignees.length > 4 && (
+                  {(project.assignees ?? []).length > 4 && (
                     <div className="w-6 h-6 rounded-full bg-ice-30 flex items-center justify-center ring-2 ring-white">
                       <span className="text-[8px] text-text-secondary font-medium leading-none">
                         +{project.assignees.length - 4}
@@ -252,7 +264,7 @@ function CardsView({ projects }: { projects: Project[] }) {
 /* ================================================================== */
 /*  List View                                                          */
 /* ================================================================== */
-function ListView({ projects }: { projects: Project[] }) {
+function ListView({ projects }: { projects: any[] }) {
   return (
     <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 overflow-hidden">
       <div className="overflow-x-auto">
@@ -316,18 +328,18 @@ function ListView({ projects }: { projects: Project[] }) {
                   </td>
                   <td className="px-4">
                     <div className="flex items-center -space-x-2">
-                      {project.assignees.slice(0, 3).map((a, i) => (
+                      {(project.assignees ?? []).slice(0, 3).map((a: any, i: number) => (
                         <div
-                          key={a.initials + i}
+                          key={(a.initials ?? i) + i}
                           className="w-6 h-6 rounded-full bg-navy-80 flex items-center justify-center ring-2 ring-white"
                           title={a.name}
                         >
                           <span className="text-[8px] text-white font-medium leading-none">
-                            {a.initials}
+                            {a.initials ?? a.name?.[0] ?? "?"}
                           </span>
                         </div>
                       ))}
-                      {project.assignees.length > 3 && (
+                      {(project.assignees ?? []).length > 3 && (
                         <div className="w-6 h-6 rounded-full bg-ice-30 flex items-center justify-center ring-2 ring-white">
                           <span className="text-[8px] text-text-secondary font-medium leading-none">
                             +{project.assignees.length - 3}
@@ -349,7 +361,7 @@ function ListView({ projects }: { projects: Project[] }) {
 /* ================================================================== */
 /*  Timeline (Gantt) View                                              */
 /* ================================================================== */
-function TimelineView({ projects }: { projects: Project[] }) {
+function TimelineView({ projects }: { projects: any[] }) {
   const { earliest, latest, span } = getTimelineBounds(projects);
   const today = new Date().getTime();
   const todayPct = pct(today, earliest, span);
