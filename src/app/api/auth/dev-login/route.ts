@@ -68,9 +68,10 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error("[dev-login] failed:", (err as Error).message);
+    const msg = (err as Error).message;
+    console.error("[dev-login] failed:", msg);
     return NextResponse.json(
-      { error: { code: "INTERNAL", message: "Login failed" } },
+      { error: { code: "INTERNAL", message: msg } },
       { status: 500 },
     );
   }
