@@ -57,7 +57,7 @@ export default function ProjectDetailPage() {
   const params = useParams();
   const projectId = params.id as string;
   const { data: rawData, isLoading, error } = useProject(projectId);
-  const project = (rawData as any)?.data as Project | undefined;
+  const project = rawData as Project | undefined;
 
   const [activeTab, setActiveTab] = useState<Tab>("tasks");
 
