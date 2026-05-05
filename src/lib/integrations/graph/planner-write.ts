@@ -103,12 +103,24 @@ export async function createPlannerTask(planId: string, data: PlannerTaskData) {
   return graphRequest("POST", "/planner/tasks", taskBody);
 }
 
-/** Update a task in Planner. Requires etag for If-Match. [R34: only tasks] */
+/** Fetch the ETag for a Planner task (required for update/delete). */
+async function getPlannerTaskEtag(taskId: string): Promise<string> {
+  const token = await getToken();
+  const res = await fetch(`${GRAPH_BASE}/planner/tasks/${taskId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Failed to fetch task etag: ${res.status}`);
+  const data = (await res.json()) as { "@odata.etag": string };
+  return data["@odata.etag"];
+}
+
+/** Update a task in Planner. Fetches etag automatically. [R34: only tasks] */
 export async function updatePlannerTask(
   taskId: string,
   data: Partial<PlannerTaskData>,
-  etag: string,
 ) {
+  const etag = await getPlannerTaskEtag(taskId);
+
   const taskBody: Record<string, unknown> = {};
   if (data.name) taskBody.title = data.name;
   if (data.dueDate) taskBody.dueDateTime = new Date(data.dueDate).toISOString();
@@ -117,8 +129,9 @@ export async function updatePlannerTask(
   return graphRequest("PATCH", `/planner/tasks/${taskId}`, taskBody, { "If-Match": etag });
 }
 
-/** Delete a task from Planner. Requires etag for If-Match. [R34: only tasks] */
-export async function deletePlannerTask(taskId: string, etag: string) {
+/** Delete a task from Planner. Fetches etag automatically. [R34: only tasks] */
+export async function deletePlannerTask(taskId: string) {
+  const etag = await getPlannerTaskEtag(taskId);
   const token = await getToken();
   const res = await fetch(`${GRAPH_BASE}/planner/tasks/${taskId}`, {
     method: "DELETE",

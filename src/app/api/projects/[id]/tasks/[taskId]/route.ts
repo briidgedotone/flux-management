@@ -9,6 +9,7 @@ import { successResponse, Errors } from "@/lib/api/response";
 import { updateTaskSchema, taskIdSchema } from "@/lib/validators/projects";
 import { getTaskById, updateTask, deleteTask } from "@/lib/db/queries/projects";
 import { logActivity } from "@/lib/db/queries/activity-log";
+import { updatePlannerTask, deletePlannerTask, backgroundPlannerWrite } from "@/lib/integrations/graph/planner-write";
 
 export async function PUT(
   request: NextRequest,
@@ -34,7 +35,18 @@ export async function PUT(
 
       const updated = await updateTask(parsedId.data.taskId, body.data);
 
-      // TODO: Planner write-back (background) — Step 5.1
+      // Planner write-back (background, non-blocking) [R33]
+      const plannerTaskId = existing.planner_task_id;
+      if (plannerTaskId && !plannerTaskId.startsWith("mock-")) {
+        const priorityMap: Record<string, number> = { Critical: 1, High: 3, Medium: 5, Low: 9 };
+        backgroundPlannerWrite("update", () =>
+          updatePlannerTask(plannerTaskId, {
+            name: body.data.name,
+            dueDate: body.data.dueDate ?? undefined,
+            priority: body.data.priority ? priorityMap[body.data.priority] : undefined,
+          }),
+        );
+      }
 
       // R29: Audit log
       await logActivity(
@@ -76,7 +88,11 @@ export async function DELETE(
 
       await deleteTask(parsedId.data.taskId);
 
-      // TODO: Planner delete (background) — Step 5.1
+      // Planner delete (background, non-blocking) [R33]
+      const plannerTaskId = existing.planner_task_id;
+      if (plannerTaskId && !plannerTaskId.startsWith("mock-")) {
+        backgroundPlannerWrite("delete", () => deletePlannerTask(plannerTaskId));
+      }
 
       // R29: Audit log
       await logActivity(

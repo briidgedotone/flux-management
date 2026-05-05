@@ -9,6 +9,7 @@ import { projectIdSchema, createTaskSchema } from "@/lib/validators/projects";
 import { getProject, createTask } from "@/lib/db/queries/projects";
 import { logActivity } from "@/lib/db/queries/activity-log";
 import { backgroundSendEmail, taskAssignmentEmail } from "@/lib/integrations/mail/sender";
+import { createPlannerTask, backgroundPlannerWrite } from "@/lib/integrations/graph/planner-write";
 
 export async function POST(
   request: NextRequest,
@@ -30,7 +31,20 @@ export async function POST(
       // DB write (immediate)
       const task = await createTask(parsedId.data.id, project.organizationId, body.data);
 
-      // TODO: Planner write-back (background, non-blocking) — Step 5.1
+      // Planner write-back (background, non-blocking) [R33]
+      // Only attempt if project has a real Planner plan ID (not mock/dataverse IDs)
+      const planId = project.plannerPlanId;
+      if (planId && !planId.startsWith("mock-") && !planId.startsWith("test-")) {
+        const priorityMap: Record<string, number> = { Critical: 1, High: 3, Medium: 5, Low: 9 };
+        backgroundPlannerWrite("create", () =>
+          createPlannerTask(planId, {
+            name: body.data.name,
+            dueDate: body.data.dueDate ?? undefined,
+            priority: priorityMap[body.data.priority ?? "Medium"],
+            assigneeEmail: body.data.assignedToEmail ?? undefined,
+          }),
+        );
+      }
 
       // R29: Audit log
       await logActivity(
