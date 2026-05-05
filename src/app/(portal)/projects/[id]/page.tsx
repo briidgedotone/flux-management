@@ -21,12 +21,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useProject, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/use-projects";
-import { useDocuments } from "@/hooks/use-documents";
 import { StatusBadge } from "@/components/shared/status-badge";
 import type { Project, ProjectTask, TaskStatus, TicketPriority } from "@/data/types";
 import { cn } from "@/lib/utils";
 
-type Tab = "tasks" | "timeline" | "files" | "overview";
+type Tab = "tasks" | "timeline" | "overview";
 
 const taskColumns: { status: TaskStatus; label: string; dotColor: string }[] = [
   { status: "To Do", label: "To Do", dotColor: "bg-text-muted" },
@@ -96,7 +95,6 @@ export default function ProjectDetailPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "tasks", label: "Tasks" },
     { key: "timeline", label: "Timeline" },
-    { key: "files", label: "Files" },
     { key: "overview", label: "Overview" },
   ];
 
@@ -164,7 +162,6 @@ export default function ProjectDetailPage() {
       {/* ── Tab Content ── */}
       {activeTab === "tasks" && <TasksTab project={project} />}
       {activeTab === "timeline" && <TimelineTab project={project} />}
-      {activeTab === "files" && <FilesTab clientId={project.clientId} />}
       {activeTab === "overview" && <OverviewTab project={project} />}
     </div>
   );
@@ -479,73 +476,6 @@ function TimelineTab({ project }: { project: Project }) {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/* ================================================================== */
-/*  Files Tab                                                          */
-/* ================================================================== */
-function FilesTab({ clientId }: { clientId: string }) {
-  const { data: rawData, isLoading } = useDocuments({ clientId });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const documents: any[] = (rawData as any)?.documents ?? [];
-
-  if (isLoading) {
-    return <div className="text-center py-12 text-sm text-text-muted">Loading documents...</div>;
-  }
-
-  if (documents.length === 0) {
-    return (
-      <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-10 flex flex-col items-center justify-center text-center">
-        <div className="w-14 h-14 rounded-full bg-ice-30 flex items-center justify-center mb-4">
-          <FolderOpenIcon size={24} weight="light" className="text-text-muted" />
-        </div>
-        <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-base text-text-primary mb-1">
-          No documents for this client
-        </h3>
-        <p className="text-sm text-text-secondary max-w-xs">
-          Documents will appear here once synced from SharePoint.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 overflow-hidden">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-ice">
-            <th className="text-left text-[11px] uppercase tracking-[0.08em] font-medium text-text-muted px-6 py-3">Name</th>
-            <th className="text-left text-[11px] uppercase tracking-[0.08em] font-medium text-text-muted px-4 py-3">Type</th>
-            <th className="text-left text-[11px] uppercase tracking-[0.08em] font-medium text-text-muted px-4 py-3">Size</th>
-            <th className="text-left text-[11px] uppercase tracking-[0.08em] font-medium text-text-muted px-4 py-3">Modified</th>
-            <th className="px-4 py-3">{" "}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {documents.slice(0, 20).map((doc: any) => (
-            <tr key={doc.id} className="border-t border-ice hover:bg-ice-30/50 transition-colors">
-              <td className="px-6 py-3 text-[13px] font-medium text-text-primary truncate max-w-[280px]">{doc.name}</td>
-              <td className="px-4 py-3 text-[11px] text-text-muted uppercase">{doc.fileType ?? "other"}</td>
-              <td className="px-4 py-3 text-[13px] text-text-muted">{doc.sizeDisplay ?? "—"}</td>
-              <td className="px-4 py-3 text-[13px] text-text-muted">{doc.modifiedAt ? new Date(doc.modifiedAt).toLocaleDateString() : "—"}</td>
-              <td className="px-4 py-3">
-                {doc.webUrl && (
-                  <a href={doc.webUrl} target="_blank" rel="noopener noreferrer" className="text-text-muted hover:text-blue transition-colors text-xs">
-                    Open ↗
-                  </a>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {documents.length > 20 && (
-        <div className="px-6 py-3 text-xs text-text-muted border-t border-ice">
-          Showing 20 of {documents.length} documents. <a href="/documents" className="text-blue hover:underline">View all →</a>
-        </div>
-      )}
     </div>
   );
 }
