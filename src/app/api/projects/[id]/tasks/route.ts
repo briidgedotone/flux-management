@@ -3,7 +3,7 @@
 // Dual-write: DB immediate + Planner background (Step 5.1) [R33]
 
 import { NextRequest } from "next/server";
-import { withManagementAuth } from "@/lib/auth/middleware";
+import { withRole } from "@/lib/auth/middleware";
 import { successResponse, Errors } from "@/lib/api/response";
 import { projectIdSchema, createTaskSchema } from "@/lib/validators/projects";
 import { getProject, createTask } from "@/lib/db/queries/projects";
@@ -15,7 +15,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return withManagementAuth(request, async (ctx) => {
+  return withRole(request, ["co-ceo", "director"], async (ctx) => {
     try {
       const { id } = await params;
       const parsedId = projectIdSchema.safeParse({ id });

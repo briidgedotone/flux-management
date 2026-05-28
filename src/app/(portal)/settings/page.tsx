@@ -22,7 +22,7 @@ function ProfileTab({ user }: { user: { name: string; email: string; role: strin
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "??";
 
-  const roleLabel = (user?.role ?? "").replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const roleLabel = user?.role === "co-ceo" ? "Owner" : (user?.role ?? "").replace("-", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div className="space-y-6">
@@ -78,7 +78,7 @@ function NotificationsTab() {
       </div>
       <div className="bg-ice-30/50 rounded-xl p-4">
         <p className="text-xs text-text-muted">
-          Notification preferences are managed at the system level. All co-CEO and director users receive these notifications. Contact an administrator to modify notification settings.
+          Notification preferences are managed at the system level. All Owner and director users receive these notifications. Contact an administrator to modify notification settings.
         </p>
       </div>
     </div>
@@ -118,7 +118,7 @@ function SecurityTab() {
         <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[17px] text-text-primary mb-3">Access Control</h3>
         <div className="space-y-3">
           {[
-            { role: "Co-CEO", access: "Full access to all features, reports, settings, and AI assistant" },
+            { role: "Owner", access: "Full access to all features, reports, settings, and AI assistant" },
             { role: "Director", access: "Full access to all features, reports, and AI assistant" },
             { role: "Employee", access: "Projects and assigned tasks only. Cannot view reports, manage clients, or use AI." },
           ].map((r) => (

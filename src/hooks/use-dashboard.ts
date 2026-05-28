@@ -18,3 +18,10 @@ export function useDashboard() {
     queryFn: () => api.get<DashboardData>("/api/dashboard"),
   });
 }
+
+export function useMyDashboard() {
+  return useQuery({
+    queryKey: [...queryKeys.dashboard, "me"],
+    queryFn: () => api.get("/api/dashboard/me"),
+  });
+}

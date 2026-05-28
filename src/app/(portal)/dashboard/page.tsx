@@ -16,10 +16,11 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { PriorityIndicator } from "@/components/shared/priority-indicator";
 import { TicketSlideOver } from "@/components/shared/ticket-slide-over";
 import { KpiCard } from "@/components/shared/kpi-card";
-import { useDashboard } from "@/hooks/use-dashboard";
+import { useDashboard, useMyDashboard } from "@/hooks/use-dashboard";
 import { useTickets, useTicketChartData } from "@/hooks/use-tickets";
 import { useProjects } from "@/hooks/use-projects";
 import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useClientFilter } from "@/hooks/use-client-filter";
 import type { Ticket } from "@/data/types";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,12 @@ const todayFormatted = new Date().toLocaleDateString("en-US", {
 });
 
 export default function DashboardPage() {
+  const perms = usePermissions();
+  if (perms.seePersonalDashboardOnly) return <EmployeeDashboard />;
+  return <ManagementDashboard />;
+}
+
+function ManagementDashboard() {
   const router = useRouter();
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [chartRange, setChartRange] = useState<ChartRange>("7d");
@@ -201,6 +208,139 @@ export default function DashboardPage() {
             <div className="flex items-center justify-center h-[200px] text-[13px] text-text-muted">Loading...</div>
           )}
         </div>
+      </div>
+
+      {/* Recent Tickets */}
+      <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4">
+          <h2 className="font-[family-name:var(--font-aptos)] font-semibold text-[15px] text-text-primary">Recent Tickets</h2>
+          <button onClick={() => router.push("/tickets")} className="flex items-center gap-1 text-[12px] font-medium text-blue hover:underline">
+            View all <CaretRightIcon size={11} weight="bold" />
+          </button>
+        </div>
+        <table className="w-full">
+          <thead>
+            <tr className="border-t border-ice/60">
+              <th className="text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted pl-6 pr-4 py-3">Ticket</th>
+              <th className="text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted px-4 py-3">Subject</th>
+              <th className="text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted px-4 py-3">Client</th>
+              <th className="text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted px-4 py-3">Status</th>
+              <th className="text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-text-muted px-4 py-3">Priority</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentTickets.map((t: Record<string, unknown>) => (
+              <tr key={t.id as string} onClick={() => setSelectedTicket(t as unknown as Ticket)}
+                className="border-t border-ice/40 cursor-pointer hover:bg-blue-10/30 transition-colors">
+                <td className="pl-6 pr-4 py-3"><span className="font-mono text-[13px] text-blue">#{String(t.ticketNumber ?? t.id).split("_").pop()}</span></td>
+                <td className="px-4 py-3 text-[13px] text-text-primary max-w-[240px] truncate">{t.subject as string}</td>
+                <td className="px-4 py-3 text-[12px] text-text-secondary">{t.clientName as string}</td>
+                <td className="px-4 py-3"><StatusBadge status={t.status as "Open" | "Pending" | "Closed"} /></td>
+                <td className="px-4 py-3"><PriorityIndicator priority={t.priority as "Critical" | "High" | "Medium" | "Low"} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Active Projects */}
+      <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4">
+          <h2 className="font-[family-name:var(--font-aptos)] font-semibold text-[15px] text-text-primary">Active Projects</h2>
+          <button onClick={() => router.push("/projects")} className="flex items-center gap-1 text-[12px] font-medium text-blue hover:underline">
+            View all <CaretRightIcon size={11} weight="bold" />
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-6 pb-6">
+          {activeProjects.map((p: Record<string, unknown>) => {
+            const statusColor = p.status === "On Track" ? "text-success" : p.status === "At Risk" ? "text-warning" : "text-error";
+            const statusDot = p.status === "On Track" ? "bg-success" : p.status === "At Risk" ? "bg-warning" : "bg-error";
+            return (
+              <div key={p.id as string} onClick={() => router.push(`/projects/${p.id}`)}
+                className="border border-ice/50 rounded-xl p-4 hover:shadow-level-1 hover:-translate-y-0.5 cursor-pointer transition-all duration-200">
+                <p className="font-[family-name:var(--font-aptos)] font-semibold text-[13px] text-text-primary truncate">{p.name as string}</p>
+                <p className="text-[11px] text-text-muted mt-0.5">{p.clientName as string}</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span className={cn("w-1.5 h-1.5 rounded-full", statusDot)} />
+                  <span className={cn("text-[11px] font-medium", statusColor)}>{p.status as string}</span>
+                </div>
+                <div className="mt-3 w-full bg-ice-50 rounded-full h-1.5">
+                  <div className="bg-blue h-1.5 rounded-full transition-all" style={{ width: `${p.progress}%` }} />
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-[11px] text-text-muted">{p.tasksCompleted as number}/{p.totalTasks as number} tasks</span>
+                  <span className="text-[11px] text-text-muted font-medium">{p.progress as number}%</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <TicketSlideOver ticket={selectedTicket} onClose={() => setSelectedTicket(null)} />
+    </div>
+  );
+}
+
+function EmployeeDashboard() {
+  const router = useRouter();
+  const { data: auth } = useAuth();
+  // Use the same team-wide dashboard data — employees see company KPIs without financials
+  const { data: dashboard } = useDashboard();
+  const { data: ticketsData } = useTickets({ limit: 5, sort: "created_at", order: "desc" });
+  const { data: projectsData } = useProjects({ limit: 6, sort: "created_at", order: "desc" });
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
+  const d = dashboard;
+  const recentTickets = (ticketsData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+  const activeProjects = (projectsData as { data?: Array<Record<string, unknown>> })?.data ?? [];
+
+  return (
+    <div className="space-y-6">
+      {/* Greeting */}
+      <div>
+        <h1 className="font-[family-name:var(--font-aptos)] font-bold text-[24px] leading-tight tracking-[-0.02em] text-text-primary">
+          {getGreeting()}{auth?.name ? `, ${auth.name}` : ""}
+        </h1>
+        <p className="text-[13px] text-text-secondary mt-0.5">
+          <CalendarBlankIcon size={14} weight="light" className="inline mr-1" />
+          {todayFormatted}
+        </p>
+      </div>
+
+      {/* KPIs — same as management but no clients count, showing operational metrics */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard
+          icon={<TicketIcon size={20} weight="light" />}
+          value={String(d?.tickets.open ?? "—")}
+          label="Open Tickets"
+          iconBgClass="bg-error/10" iconColorClass="text-error"
+          onClick={() => router.push("/tickets")}
+          index={0}
+        />
+        <KpiCard
+          icon={<ShieldCheckIcon size={20} weight="light" />}
+          value={d ? `${Math.round(d.tickets.avgResolutionHours)}h` : "—"}
+          label="Avg Resolution"
+          iconBgClass="bg-warning/10" iconColorClass="text-warning"
+          index={1}
+        />
+        <KpiCard
+          icon={<KanbanIcon size={20} weight="light" />}
+          value={String(d?.projects.total ?? "—")}
+          label="Active Projects"
+          iconBgClass="bg-blue-10" iconColorClass="text-blue"
+          onClick={() => router.push("/projects")}
+          index={2}
+        />
+        <KpiCard
+          icon={<BuildingsIcon size={20} weight="light" />}
+          value={String(d?.clients.total ?? "—")}
+          label="Clients"
+          iconBgClass="bg-success-tint" iconColorClass="text-success"
+          onClick={() => router.push("/clients")}
+          index={3}
+        />
       </div>
 
       {/* Recent Tickets */}

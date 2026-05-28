@@ -3,6 +3,7 @@
 import { useSidebarStore } from "@/stores/sidebar-store";
 import { useClientFilterStore } from "@/stores/client-filter-store";
 import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useClients } from "@/hooks/use-clients";
 import { SidebarNavItem } from "./sidebar-nav-item";
 import {
@@ -48,6 +49,7 @@ export function Sidebar() {
   const { isExpanded, isMobileOpen, setMobileOpen, toggleExpanded } = useSidebarStore();
   const { selectedClientId, selectedClientName, setClient, clearClient } = useClientFilterStore();
   const { data: auth } = useAuth();
+  const perms = usePermissions();
   const { data: clientsResp } = useClients({ limit: 50 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clients: any[] = (clientsResp as any)?.data ?? [];
@@ -152,7 +154,11 @@ export function Sidebar() {
             </span>
           )}
           <div className="space-y-0.5">
-            {mainNav.map((item) => (
+            {mainNav.filter((item) => {
+              if (item.href === "/contact-submissions" && !perms.canAccessLeads) return false;
+              if (item.href === "/connectors" && !perms.canAccessConnectors) return false;
+              return true;
+            }).map((item) => (
               <SidebarNavItem
                 key={item.href}
                 href={item.href}
@@ -216,9 +222,13 @@ export function Sidebar() {
             </div>
           )}
           {showLabels && (
-            <button className="text-text-on-dark-muted hover:text-white transition-colors">
+            <a
+              href="/api/auth/logout"
+              title="Sign out"
+              className="text-text-on-dark-muted hover:text-white transition-colors"
+            >
               <SignOutIcon size={18} weight="light" />
-            </button>
+            </a>
           )}
         </div>
       </aside>

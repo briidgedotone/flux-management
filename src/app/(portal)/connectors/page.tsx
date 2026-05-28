@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { PageHeader } from "@/components/shared/page-header";
 import { useConnectors } from "@/hooks/use-connectors";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { cn } from "@/lib/utils";
 
 const connectorMeta: Record<string, { name: string; description: string; icon: typeof PlugIcon; syncFrequency: string }> = {
@@ -35,6 +36,14 @@ type AggregatedConnector = {
 };
 
 export default function ConnectorsPage() {
+  return (
+    <RoleGuard allowed={["co-ceo", "director"]}>
+      <ConnectorsContent />
+    </RoleGuard>
+  );
+}
+
+function ConnectorsContent() {
   const { data: rawData, isLoading, error } = useConnectors();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const apiConnectors: any[] = (rawData as any[]) ?? [];

@@ -10,6 +10,7 @@ import { useTicketStats } from "@/hooks/use-tickets";
 import { useProjects } from "@/hooks/use-projects";
 import { useClients } from "@/hooks/use-clients";
 import { useClientFilter } from "@/hooks/use-client-filter";
+import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 
 type ReportType = "ticket-activity" | "project-progress" | "full-summary";
@@ -24,17 +25,21 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState<ReportType | null>(null);
   const [range, setRange] = useState<TimeRange>("30d");
   const { clientId, clientName, isFiltered } = useClientFilter();
+  const perms = usePermissions();
+
+  const allReports = [
+    { type: "ticket-activity" as ReportType, title: "Ticket Activity", desc: "Volume, resolution times, and trends", icon: TicketIcon, color: "bg-error/10 text-error", financial: false },
+    { type: "project-progress" as ReportType, title: "Project Progress", desc: "Status, completion, and timelines", icon: KanbanIcon, color: "bg-blue-10 text-blue", financial: false },
+    { type: "full-summary" as ReportType, title: "Management Summary", desc: "Combined weekly digest", icon: FileTextIcon, color: "bg-success-tint text-success", financial: true },
+  ];
+  const visibleReports = allReports.filter((r) => !r.financial || perms.canSeeFinancialReports);
 
   return (
     <div className="space-y-5">
 
       {!reportType ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { type: "ticket-activity" as ReportType, title: "Ticket Activity", desc: "Volume, resolution times, and trends", icon: TicketIcon, color: "bg-error/10 text-error" },
-            { type: "project-progress" as ReportType, title: "Project Progress", desc: "Status, completion, and timelines", icon: KanbanIcon, color: "bg-blue-10 text-blue" },
-            { type: "full-summary" as ReportType, title: "Management Summary", desc: "Combined weekly digest", icon: FileTextIcon, color: "bg-success-tint text-success" },
-          ].map((r) => (
+          {visibleReports.map((r) => (
             <button key={r.type} onClick={() => setReportType(r.type)}
               className="bg-white rounded-2xl shadow-level-1 border border-ice/40 p-6 text-left hover:shadow-level-2 hover:-translate-y-0.5 transition-all">
               <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center mb-4", r.color)}>

@@ -16,6 +16,7 @@ import { TicketSlideOver } from "@/components/shared/ticket-slide-over";
 import { useClient, useUpdateClient } from "@/hooks/use-clients";
 import { useTickets } from "@/hooks/use-tickets";
 import { useProjects } from "@/hooks/use-projects";
+import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 import type { Ticket } from "@/data/types";
 
@@ -34,6 +35,7 @@ export default function ClientDetailPage() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
+  const perms = usePermissions();
   const clientId = params.id as string;
   const { data: client, isLoading, refetch } = useClient(clientId);
   const { data: ticketsResp } = useTickets({ clientId, limit: 50 });
@@ -110,11 +112,13 @@ export default function ClientDetailPage() {
                 </p>
               </div>
             </div>
-            <button onClick={() => setEditOpen(true)}
-              className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-ice-30 transition-colors shrink-0"
-              title="Edit Profile">
-              <PencilSimpleIcon size={16} weight="light" className="text-text-secondary" />
-            </button>
+            {perms.canEditClients && (
+              <button onClick={() => setEditOpen(true)}
+                className="flex items-center justify-center w-9 h-9 rounded-lg hover:bg-ice-30 transition-colors shrink-0"
+                title="Edit Profile">
+                <PencilSimpleIcon size={16} weight="light" className="text-text-secondary" />
+              </button>
+            )}
           </div>
         </div>
       </div>

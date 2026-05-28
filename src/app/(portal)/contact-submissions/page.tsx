@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useContactSubmissions, useUpdateSubmission } from "@/hooks/use-contact-submissions";
 import { Portal } from "@/components/shared/portal";
+import { RoleGuard } from "@/components/shared/role-guard";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -17,6 +18,14 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 };
 
 export default function ContactSubmissionsPage() {
+  return (
+    <RoleGuard allowed={["co-ceo", "director"]}>
+      <ContactSubmissionsContent />
+    </RoleGuard>
+  );
+}
+
+function ContactSubmissionsContent() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: rawData, isLoading } = useContactSubmissions({ status: statusFilter || undefined, limit: 50 });

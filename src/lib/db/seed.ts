@@ -61,11 +61,8 @@ async function run() {
     console.log("[seed] client profiles created for Armada + OnPoint");
 
     // --- Team members for management users ---
-    const members = [
-      { userId: "3a2338ab-1852-4159-9c51-9474ef409715", dept: "Leadership" },  // Brandon Devier
-      { userId: "d6f9a017-ff5b-4b23-81b9-6221d3f13313", dept: "Leadership" },  // Zack Devier
-      { userId: "c565cdb2-284b-4c39-bdcd-9d967cbfe901", dept: "Services" },    // Cameron Cannon
-    ];
+    // Brandon Devier, Zack Devier, and Cameron Cannon excluded per request
+    const members: { userId: string; dept: string }[] = [];
 
     for (const m of members) {
       await pool.query(

@@ -105,7 +105,7 @@ function LoginContent() {
               <div className="space-y-2">
                 <button onClick={() => handleDevLogin("co-ceo")}
                   className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
-                  Co-CEO
+                  Owner
                 </button>
                 <button onClick={() => handleDevLogin("director")}
                   className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">

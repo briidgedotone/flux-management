@@ -19,7 +19,7 @@ export async function listTeamMembers() {
         WHERE (t2.assigned_to_email = u.email OR t2.assigned_to_name = u.name) AND t2.resolution_time_hours IS NOT NULL) AS avg_resolution_hours
      FROM users u
      JOIN team_members tm ON u.id = tm.user_id
-     WHERE u.is_active = true AND tm.status = 'active'
+     WHERE u.is_active = true
        AND u.email NOT LIKE '%@test.flux.internal'
      ORDER BY u.name ASC`,
   );

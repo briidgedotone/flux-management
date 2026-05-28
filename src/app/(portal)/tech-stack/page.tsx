@@ -9,6 +9,7 @@ import {
 import { useTechStack, useCreateSoftware, useDeleteSoftware, useCreateCloud, useDeleteCloud } from "@/hooks/use-tech-stack";
 import { useClients } from "@/hooks/use-clients";
 import { useClientFilter } from "@/hooks/use-client-filter";
+import { usePermissions } from "@/hooks/use-permissions";
 import { KpiCard } from "@/components/shared/kpi-card";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const statusBadge: Record<string, { color: string; bg: string }> = {
 
 export default function TechStackPage() {
   const { clientId, clientName, isFiltered } = useClientFilter();
+  const perms = usePermissions();
   const [showSoftwareForm, setShowSoftwareForm] = useState(false);
   const [showCloudForm, setShowCloudForm] = useState(false);
   const [infraLimit, setInfraLimit] = useState(25);
@@ -49,9 +51,11 @@ export default function TechStackPage() {
       <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">
           <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[15px] text-text-primary">Software Subscriptions</h3>
-          <button onClick={() => setShowSoftwareForm(!showSoftwareForm)} className="flex items-center gap-1.5 text-xs font-medium text-blue hover:text-blue-light transition-colors">
-            <PlusIcon size={13} weight="bold" /> Add
-          </button>
+          {perms.canEditTechStack && (
+            <button onClick={() => setShowSoftwareForm(!showSoftwareForm)} className="flex items-center gap-1.5 text-xs font-medium text-blue hover:text-blue-light transition-colors">
+              <PlusIcon size={13} weight="bold" /> Add
+            </button>
+          )}
         </div>
         {showSoftwareForm && <AddSoftwareForm onClose={() => setShowSoftwareForm(false)} />}
         {software.length > 0 ? (
@@ -138,9 +142,11 @@ export default function TechStackPage() {
       <div className="bg-white rounded-2xl shadow-level-1 border border-ice/40 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4">
           <h3 className="font-[family-name:var(--font-aptos)] font-semibold text-[15px] text-text-primary">Cloud Services</h3>
-          <button onClick={() => setShowCloudForm(!showCloudForm)} className="flex items-center gap-1.5 text-xs font-medium text-blue hover:text-blue-light transition-colors">
-            <PlusIcon size={13} weight="bold" /> Add
-          </button>
+          {perms.canEditTechStack && (
+            <button onClick={() => setShowCloudForm(!showCloudForm)} className="flex items-center gap-1.5 text-xs font-medium text-blue hover:text-blue-light transition-colors">
+              <PlusIcon size={13} weight="bold" /> Add
+            </button>
+          )}
         </div>
         {showCloudForm && <AddCloudForm onClose={() => setShowCloudForm(false)} />}
         {cloud.length > 0 ? (
@@ -171,11 +177,12 @@ export default function TechStackPage() {
 
 function SoftwareRow({ s }: { s: any }) {
   const deleteMutation = useDeleteSoftware();
+  const perms = usePermissions();
   const st = statusBadge[s.status] ?? statusBadge.Active;
   const isManual = !s.source || s.source === "manual";
 
   return (
-    <tr className="border-t border-ice/40 hover:bg-blue-10/30 transition-colors">
+    <tr className="border-t border-ice/40 hover:bg-blue-10/30 transition-colors group">
       <td className="pl-6 pr-4 py-3 text-[13px] font-medium text-text-primary">{s.name}</td>
       <td className="px-4 py-3 text-[13px] text-text-secondary">{s.clientName}</td>
       <td className="px-4 py-3 text-[13px] text-text-secondary tabular-nums">{s.licenseUsed ?? 0}/{s.licenseCount ?? "—"}</td>
@@ -185,7 +192,7 @@ function SoftwareRow({ s }: { s: any }) {
         </span>
       </td>
       <td className="px-4 py-3">
-        {isManual && (
+        {isManual && perms.canEditTechStack && (
           <button onClick={() => deleteMutation.mutate(s.id)} className="text-text-muted hover:text-error transition-colors opacity-0 group-hover:opacity-100">
             <TrashIcon size={14} weight="light" />
           </button>
@@ -197,6 +204,7 @@ function SoftwareRow({ s }: { s: any }) {
 
 function CloudRow({ c }: { c: any }) {
   const deleteMutation = useDeleteCloud();
+  const perms = usePermissions();
   const st = statusBadge[c.status] ?? statusBadge.Active;
 
   return (
@@ -211,9 +219,11 @@ function CloudRow({ c }: { c: any }) {
         </span>
       </td>
       <td className="px-4 py-3">
-        <button onClick={() => deleteMutation.mutate(c.id)} className="text-text-muted hover:text-error transition-colors opacity-0 group-hover:opacity-100">
-          <TrashIcon size={14} weight="light" />
-        </button>
+        {perms.canEditTechStack && (
+          <button onClick={() => deleteMutation.mutate(c.id)} className="text-text-muted hover:text-error transition-colors opacity-0 group-hover:opacity-100">
+            <TrashIcon size={14} weight="light" />
+          </button>
+        )}
       </td>
     </tr>
   );

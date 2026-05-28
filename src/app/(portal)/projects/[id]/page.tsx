@@ -12,6 +12,8 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer,
 } from "recharts";
 import { useProject, useCreateTask, useUpdateTask, useDeleteTask } from "@/hooks/use-projects";
+import { useAuth } from "@/hooks/use-auth";
+import { usePermissions } from "@/hooks/use-permissions";
 import { KpiCard } from "@/components/shared/kpi-card";
 import type { Project, ProjectTask, TaskStatus, TicketPriority } from "@/data/types";
 import { cn } from "@/lib/utils";
@@ -158,10 +160,18 @@ export default function ProjectDetailPage() {
   );
 }
 
+// Hook to get permissions + current user email for task ownership checks
+function useProjectPermissions() {
+  const perms = usePermissions();
+  const { data: auth } = useAuth();
+  return { perms, currentUserEmail: (auth as any)?.email as string | undefined };
+}
+
 /* ── Tasks Tab ── */
 function TasksTab({ project }: { project: Project }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const { perms } = useProjectPermissions();
 
   const groupedTasks = useMemo(() => {
     const map: Record<TaskStatus, ProjectTask[]> = { "To Do": [], "In Progress": [], Review: [], Complete: [] };
@@ -173,12 +183,14 @@ function TasksTab({ project }: { project: Project }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <button onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1.5 h-9 px-4 text-xs font-medium text-white bg-blue hover:bg-blue-light rounded-lg transition-colors">
-          <PlusIcon size={14} weight="bold" /> Add Task
-        </button>
-      </div>
+      {perms.canCreateTasks && (
+        <div className="flex justify-end">
+          <button onClick={() => setShowAddForm(!showAddForm)}
+            className="flex items-center gap-1.5 h-9 px-4 text-xs font-medium text-white bg-blue hover:bg-blue-light rounded-lg transition-colors">
+            <PlusIcon size={14} weight="bold" /> Add Task
+          </button>
+        </div>
+      )}
 
       {showAddForm && <AddTaskForm projectId={project.id} onClose={() => setShowAddForm(false)} />}
 
@@ -215,13 +227,20 @@ function TaskCard({ task, projectId, isEditing, onEdit, onClose }: {
 }) {
   const updateMutation = useUpdateTask();
   const deleteMutation = useDeleteTask();
+  const { perms, currentUserEmail } = useProjectPermissions();
+
+  // Employee can only edit their own tasks
+  const isOwnTask = task.assignedToEmail === currentUserEmail;
+  const canEdit = perms.canEditAnyTask || isOwnTask;
+  const canDelete = perms.canCreateTasks; // only those who can create can delete
 
   return (
-    <div className="bg-white rounded-lg p-3.5 shadow-sm hover:shadow-level-1 transition-all cursor-pointer border border-ice/30" onClick={onEdit}>
+    <div className={cn("bg-white rounded-lg p-3.5 shadow-sm border border-ice/30 transition-all", canEdit && "hover:shadow-level-1 cursor-pointer")}
+      onClick={canEdit ? onEdit : undefined}>
       <div className={cn("w-full h-[3px] rounded-full mb-2", priorityBarColor[task.priority])} />
       <p className="text-[13px] font-medium text-text-primary leading-snug">{task.name}</p>
 
-      {isEditing && (
+      {isEditing && canEdit && (
         <div className="mt-2.5 pt-2.5 border-t border-ice/60 space-y-2" onClick={(e) => e.stopPropagation()}>
           <div className="flex flex-wrap gap-1">
             {(["To Do", "In Progress", "Review", "Complete"] as TaskStatus[]).map((s) => (
@@ -232,10 +251,12 @@ function TaskCard({ task, projectId, isEditing, onEdit, onClose }: {
                 )}>{s}</button>
             ))}
           </div>
-          <button onClick={() => { if (confirm(`Delete "${task.name}"?`)) deleteMutation.mutate({ projectId, taskId: task.id }); }}
-            className="flex items-center gap-1 text-[10px] text-error hover:underline">
-            <TrashIcon size={10} weight="light" /> Delete
-          </button>
+          {canDelete && (
+            <button onClick={() => { if (confirm(`Delete "${task.name}"?`)) deleteMutation.mutate({ projectId, taskId: task.id }); }}
+              className="flex items-center gap-1 text-[10px] text-error hover:underline">
+              <TrashIcon size={10} weight="light" /> Delete
+            </button>
+          )}
         </div>
       )}
 
