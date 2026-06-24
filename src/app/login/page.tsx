@@ -23,15 +23,9 @@ export default function LoginPage() {
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  // Dev login buttons always render — the API route guards with ENABLE_TEST_LOGIN server-side
-  const isDev = true;
 
   const handleSSO = () => {
     window.location.href = "/api/auth/login";
-  };
-
-  const handleDevLogin = (role: string) => {
-    window.location.href = `/api/auth/dev-login?role=${role}`;
   };
 
   return (
@@ -97,27 +91,6 @@ function LoginContent() {
           <p className="text-xs text-text-muted text-center mt-6">
             Access restricted to Flux Technologies team members.
           </p>
-
-          {/* Dev login bypass */}
-          {isDev && (
-            <div className="mt-8 pt-6 border-t border-ice">
-              <p className="text-xs text-text-muted mb-3 font-medium uppercase tracking-wider">Quick Login</p>
-              <div className="space-y-2">
-                <button onClick={() => handleDevLogin("co-ceo")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
-                  Owner
-                </button>
-                <button onClick={() => handleDevLogin("director")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
-                  Director
-                </button>
-                <button onClick={() => handleDevLogin("employee")}
-                  className="w-full h-10 bg-navy/10 hover:bg-navy/20 text-navy text-sm rounded-xl transition-colors">
-                  Employee
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

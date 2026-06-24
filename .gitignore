@@ -11,6 +11,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.vercel.production
 
 # Debug
 npm-debug.log*

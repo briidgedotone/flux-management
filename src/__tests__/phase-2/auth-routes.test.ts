@@ -3,7 +3,6 @@
 // See: docs/testing-plan.md § Phase 2
 
 import { describe, it, expect } from "vitest";
-import { NextRequest } from "next/server";
 import { createAuthRequest, createUnauthRequest } from "../helpers";
 import { TEST_CEO_ID } from "../test-constants";
 
@@ -36,22 +35,6 @@ describe("Auth Routes", () => {
       const req = createUnauthRequest("http://localhost:3001/api/auth/me");
       const res = await GET(req);
       expect(res.status).toBe(401);
-    });
-  });
-
-  describe("GET /api/auth/dev-login", () => {
-    it("returns 404 when ENABLE_TEST_LOGIN is not set", async () => {
-      const originalValue = process.env.ENABLE_TEST_LOGIN;
-      delete process.env.ENABLE_TEST_LOGIN;
-
-      // Dynamic import to get fresh module state
-      const mod = await import("@/app/api/auth/dev-login/route");
-      const req = new NextRequest("http://localhost:3001/api/auth/dev-login");
-      const res = await mod.GET(req);
-      expect(res.status).toBe(404);
-
-      // Restore
-      if (originalValue) process.env.ENABLE_TEST_LOGIN = originalValue;
     });
   });
 
@@ -100,7 +83,6 @@ describe("Auth Routes", () => {
       const middlewareContent = fs.readFileSync("src/middleware.ts", "utf-8");
       expect(middlewareContent).toContain("/api/auth/login");
       expect(middlewareContent).toContain("/api/auth/callback");
-      expect(middlewareContent).toContain("/api/auth/dev-login");
     });
   });
 });
